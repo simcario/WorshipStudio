@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Settings</title>
+</head>
+<body>
+    <form>
+        <div>
+            <label>Server Address</label>
+        
+            <select id="serverAddress">
+                <option value="http://localhost:7777">This PC</option>
+            </select>
+            <button type="submit">Save</button>
+        </div>
+    </form>
+    <script>
+        const electron = require('electron');
+        const {ipcRenderer} = electron;
+        const Store = require('electron-store')
+        const store = new Store();
+        const computers = store.get('listenComputers')
+        
+        let localIP = store.get('localIP');
+
+        let select = document.getElementById('serverAddress');
+    
+        computers.forEach(element => {
+           if(localIP !== element.ip){
+            var opt = document.createElement('option');
+            opt.value = 'http://' + element.ip + ':7777'
+            opt.innerHTML = 'http://' + element.ip + ':7777'
+            select.appendChild(opt)
+           }
+        });
+
+   
+        let serverAddress = store.get('serverAddress') || 'http://localhost:7777'
+        document.querySelector('#serverAddress').value = serverAddress
+        const form = document.querySelector('form');
+        form.addEventListener('submit', submitForm);
+
+        function submitForm(e){
+            e.preventDefault();
+            const serverAddress = document.querySelector('#serverAddress').value;
+            ipcRenderer.send('serverAddress', serverAddress)
+        }
+
+    </script>
+</body>
+</html>
