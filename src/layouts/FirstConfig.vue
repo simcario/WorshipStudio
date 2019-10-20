@@ -55,16 +55,6 @@
                   <div class="col-4">
                     <q-card flat>
                       <q-card-section>
-                        <q-select
-                          filled
-                          v-model="serverAddress"
-                          :options="computers"
-                          option-value="ip"
-                          option-label="label"
-                          label="Server Address"
-                        />
-                      </q-card-section>
-                      <q-card-section>
                         <q-input label="Computer Name" v-model="txtComputerName" />
                       </q-card-section>
                     </q-card>

@@ -9,7 +9,7 @@
     </q-page-sticky>
     -->
     <NewSongDialog :show="newSongDialog" :songEdit="songEdit" />
-    <QCode :qrcode="showQCode" />
+    <!--<QCode :qrcode="showQCode" />-->
     <div class="row">
       <div class="col-4 q-pa-md">
         <q-tabs v-model="activeTab" class="bg-purple text-white shadow-2 glossy">
@@ -276,11 +276,11 @@
 <script>
 import { openURL } from "quasar";
 import NewSongDialog from "../components/index/NewSongDialog";
-import QCode from "../components/index/QCode";
+//import QCode from "../components/index/QCode";
 import draggable from "vuedraggable";
 export default {
   name: "SlidesHome",
-  components: { NewSongDialog, QCode, draggable },
+  components: { NewSongDialog, draggable },
   mounted() {
     this.getAnnounces();
     this.getCloudPlaylists();
@@ -297,9 +297,11 @@ export default {
       this.songEdit = true;
       this.newSongDialog = true;
     });
+    /*
     this.$root.$on("closeQCode", () => {
       this.showQCode = false;
     });
+    */
     this.$bus.$on("loading-true", () => {
       this.loading = true;
     });
@@ -310,10 +312,11 @@ export default {
     this.$root.$on("new-song", () => {
       this.newSong();
     });
+    /*
     this.$root.$on("join-remote", () => {
       this.showQCode = true;
     });
-
+*/
       this.$renderer.send('get-playlist')
     this.$renderer.on("playlist-data",(evt, playlist)=>{ 
       this.playlist = playlist;

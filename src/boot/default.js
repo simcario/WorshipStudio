@@ -4,11 +4,16 @@ import firebase from "firebase/app";
 //import "firebase/firebase-auth";
 import Vue from "vue";
 import VueDraggableResizable from "vue-draggable-resizable";
+import { Notify } from 'quasar'
 
 import electron from 'electron'
-const {ipcRenderer} = electron;
+const {
+  ipcRenderer
+} = electron;
 
-import { ws_helpers } from "../helpers/ws.js";
+import {
+  ws_helpers
+} from "../helpers/ws.js";
 import db from "../helpers/firebase"
 
 // TODO: from localstorage
@@ -19,14 +24,19 @@ const config = {
 
 // optionally import default styles
 import "vue-draggable-resizable/dist/VueDraggableResizable.css";
-import { VUEJS_DEVTOOLS } from "electron-devtools-installer";
+import {
+  VUEJS_DEVTOOLS
+} from "electron-devtools-installer";
 
 // "async" is optional
-export default ({ Vue, store }) => {
+export default ({
+  Vue,
+  store
+}) => {
   Vue.component("nl2br", Nl2br);
   Vue.component("vue-draggable-resizable", VueDraggableResizable);
+  Vue.use(require('vue-shortkey'))
 
-  
   const loginInfo = {
     loggedIn: store.getters["defaultModule/getLoggedIn"],
     organizationName: store.getters["defaultModule/getOrganizationName"],
@@ -44,22 +54,31 @@ export default ({ Vue, store }) => {
   Vue.prototype.$renderer = ipcRenderer;
   Vue.prototype.$firebase = db;
   Vue.prototype.$firestore = db.firestore();
- 
+  Vue.prototype.$peers = {}
   Vue.prototype.$bus = new Vue()
- 
+
   const pcName = store.getters["defaultModule/getComputerName"]
 
-  ipcRenderer.send('pc-name',pcName);
-  
 
- 
-  ipcRenderer.on('yourIP',(event,data)=>{
-    Vue.prototype.$localIP = data
-   // console.log("IP",data)
+
+  ipcRenderer.on('newPeer', (event, peerName) => {
+    Notify.create({
+      message:'New peer ' + peerName,
+      color:'primary',
+      icon:'fas fa-user',
+      position:'bottom-right'
+    })
+    
   })
-  ipcRenderer.send('myIP')
 
- 
+
+  ipcRenderer.on('peers', (event, peers) => {
+  
+    Vue.prototype.$peers = peers
+  })
+
+
+
   ws_helpers.checkInternetConnection().then(res => {
     store.dispatch("defaultModule/internetStatus", res).then(() => {});
   });
@@ -73,5 +92,5 @@ export default ({ Vue, store }) => {
     store.dispatch("defaultModule/licenseExpired", res).then(() => {});
   });
 
- 
+
 };

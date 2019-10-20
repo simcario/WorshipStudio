@@ -33,6 +33,7 @@
     "vue-draggable-resizable": "^2.0.0-rc2",
     "vue-i18n": "^8.0.0",
     "vue-nl2br": "^0.1.2",
+    "vue-shortkey": "^3.1.7",
     "vue-socket.io": "^3.0.7",
     "vuedraggable": "^2.23.1",
     "vuexfire": "^3.1.2"

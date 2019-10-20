@@ -40,6 +40,9 @@
               <q-item clickable @click="$router.push({path:'/Preferences'})">
                 <q-item-section>Preferences</q-item-section>
               </q-item>
+              <q-item clickable @click="$ws.clearStorage().then(()=>$router.push('/Login'))">
+                <q-item-section>Clear Storage</q-item-section>
+              </q-item>
               <q-separator />
 
               <q-item clickable @click="$ws.appQuit()">
@@ -111,7 +114,7 @@
           class="gt-xs"
           v-if="(user.loggedIn==='true' || user.loggedIn!==null) && nerworkEnabled===true"
         />
-        <q-btn color="red" dense flat icon="fas fa-sync-alt" class="gt-xs" v-else />
+        <q-btn color="red" dense flat icon="fas fa-sync-alt"  v-else />
 
         <q-btn
           color="green"
@@ -121,7 +124,22 @@
           class="gt-xs"
           v-if="internetStatus==='online'"
         />
-        <q-btn color="red" dense flat icon="fas fa-wifi" class="gt-xs" v-else />
+        <q-btn color="red" dense flat icon="fas fa-wifi"  v-else />
+   
+          <q-btn color="primary" dense flat icon="fas fa-user" :label="peersConnected">
+            <q-menu
+              transition-show="flip-right"
+              transition-hide="flip-left"
+            >
+          <q-list style="min-width: 100px">
+            <q-item clickable v-for="(peer,i) in $peers" :key="i">
+              <q-item-section>{{peer.name}}</q-item-section>
+            </q-item>
+           
+          </q-list>
+        </q-menu>
+        </q-btn>
+      
       </q-bar>
       <q-dialog v-model="alert">
         <q-card>
@@ -145,10 +163,16 @@
 <script>
 import { openURL } from "quasar";
 import SideMenu from "../components/index/SideMenu";
+import { isObject } from 'util';
 export default {
   name: "ChordManager",
   components: { SideMenu },
   mounted() {
+
+    this.$bus.$on('peers',peers=>{
+        this.peers = peers;
+        console.log(peers)
+    })
     if (this.licenseExpired === true) {
       this.$router.push({ path: "/RenewLicense" });
     }
@@ -172,6 +196,8 @@ export default {
     return {
       fullscreen: true,
       leftDrawerOpen: false,
+      numberofPeers:0,
+      peers:{},
       alert: false,
       nerworkEnabled: true,
       version: "1.0.0"
@@ -203,8 +229,17 @@ export default {
     },
     licenseExpired() {
       return this.$store.getters["defaultModule/getLicenseExpired"];
+    },
+    peersConnected(){
+      
+      if(isObject(this.$peers)){
+        return Object.keys(this.$peers).length
+      } else {
+        return 0
+      }
+     
     }
-  }
+  },
 };
 </script>
 

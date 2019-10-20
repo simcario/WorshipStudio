@@ -1,6 +1,6 @@
 const express = require("express");
-//const Store = require("electron-store");
-//const store = new Store();
+const Store = require("electron-store");
+const store = new Store();
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const url = require("url");
@@ -16,9 +16,16 @@ http.listen(7777)
 
 const electron = require("electron");
 
-import { ws } from "./ws";
+const PCName = store.get('pc-name') || 'COMPUTER'
+//import { ws } from "./ws";
 
-import { app, BrowserWindow, Menu, ipcMain } from "electron";
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  ipcMain,
+ globalShortcut
+} from "electron";
 
 
 server.use(bodyParser.json());
@@ -48,19 +55,10 @@ let playlist = {
 
 
 
-var peers = [];
-let clients = {};
-var connSeq = 0;
-
-const myId = crypto.randomBytes(32);
-
-const config = {
-  id: myId
-};
 
 function sendMessage(type, message) {
-  
-  for(let id in clients){
+
+  for (let id in clients) {
     clients[id].conn.write(
       Buffer.from(
         JSON.stringify({
@@ -72,101 +70,123 @@ function sendMessage(type, message) {
   }
 }
 
+
+let clients = {};
+var connSeq = 0;
+
+
+const myId = crypto.randomBytes(32);
+const config = {
+  id: myId + '{wsarray}' + PCName
+};
 const sw = swarm(config);
+(() => {
+  sw.listen(7778);
+  console.log("P2P Listening");
+  
+  sw.join("worshipstudio");
 
-sw.listen(7778);
-console.log("P2P Listening");
-sw.join("worshipstudio");
 
-sw.on("connection", (conn, info) => {
-  // Connection id
-  const seq = connSeq;
+  sw.on("connection", (conn, info) => {
+    
+    console.log(info.port)
 
-  const peerId = info.id.toString("hex");
-  console.log(`Connected #${seq} to peer: ${peerId}`);
+      // Connection id
+    const seq = connSeq;
+    
+    const peerId = info.id.toString();
+    const peeArray = peerId.split(/{wsarray}/)
+    const peerName = peeArray[1]
 
-  // Keep alive TCP connection with peer
-  if (info.initiator) {
-    try {
-      conn.setKeepAlive(true, 600);
-    } catch (exception) {
-      console.log("exception", "KeepAlive Error");
-    }
-  }
+    console.log(`Connected #${seq} to peer: ${peerName}`);
 
-  conn.on("data", data => {
-    // Here we handle incomming messages
-    let message = JSON.parse(data.toString());
-    let content = message.message;
-    switch (message.type) {
-      case "song":
-          mainWindow.webContents.send('song',content)
-        break;
+
+  
+
+    conn.on("data", data => {
+      // Here we handle incomming messages
+      let message = JSON.parse(data.toString());
+      let content = message.message;
+      switch (message.type) {
+        case "song":
+          mainWindow.webContents.send('song', content)
+          break;
         case "playlist-data":
-        mainWindow.webContents.send('playlist-data',content)
-        break;
+          mainWindow.webContents.send('playlist-data', content)
+          break;
+
+      }
+    });
+
+    conn.on("close", () => {
+      // Here we handle peer disconnection
+      console.log(`Connection ${seq} closed, peer id: ${peerName}`);
+      delete clients[peerId]
+      mainWindow.webContents.send('peers', clients)
+      console.log('Peers length', Object.keys(clients).length)
+    });
+    if (!clients[peerId]) {
+      clients[peerId] = {};
     }
+    clients[peerId].conn = conn;
+    clients[peerId].swq = connSeq;
+    clients[peerId].name = peerName;
+    console.log('Peers length', Object.keys(clients).length)
+    mainWindow.webContents.send('peers', clients)
+    mainWindow.webContents.send('newPeer', peerName)
+    connSeq++;
+   
   });
+})()
 
-  conn.on("close", () => {
-    // Here we handle peer disconnection
-    console.log(`Connection ${seq} closed, peer id: ${peerId}`);
-    delete clients[peerId]
-  });
-  if (!clients[peerId]) {
-    clients[peerId] = {};
-  }
-  clients[peerId].conn = conn;
-  clients[peerId].swq = connSeq;
 
-  connSeq++;
+ipcMain.on("pc-name", (event, name) => {
+
+ 
+  store.set('pc-name', name)
+
 });
 
-ipcMain.on('song',(event,song)=>{
-  sendMessage('song',song)
-  mainWindow.webContents.send('song',song)
+
+
+ipcMain.on('song', (event, song) => {
+  sendMessage('song', song)
+  mainWindow.webContents.send('song', song)
 })
 
-ipcMain.on('get-playlist',(event)=>{
-  sendMessage('playlist-data',playlist)
-  mainWindow.webContents.send('playlist-data',playlist)
+ipcMain.on('get-playlist', (event) => {
+  sendMessage('playlist-data', playlist)
+  mainWindow.webContents.send('playlist-data', playlist)
 })
-ipcMain.on('add-to-playlist',(event, song)=>{
+ipcMain.on('add-to-playlist', (event, song) => {
   playlist.items.push(song);
-  sendMessage('playlist-data',playlist)
-  mainWindow.webContents.send('playlist-data',playlist)
+  sendMessage('playlist-data', playlist)
+  mainWindow.webContents.send('playlist-data', playlist)
 })
-ipcMain.on('remove-from-playlist',(event, index)=>{
+ipcMain.on('remove-from-playlist', (event, index) => {
   playlist.items.splice(index, 1);
-  sendMessage('playlist-data',playlist)
-  mainWindow.webContents.send('playlist-data',playlist)
+  sendMessage('playlist-data', playlist)
+  mainWindow.webContents.send('playlist-data', playlist)
 })
 ipcMain.on("update-playlist", (evt, content) => {
   playlist = content;
-  sendMessage('playlist-data',playlist)
-  mainWindow.webContents.send('playlist-data',playlist)
+  sendMessage('playlist-data', playlist)
+  mainWindow.webContents.send('playlist-data', playlist)
 });
 
 
-ipcMain.on("slide", (evt,text) => {
+ipcMain.on("slide", (evt, text) => {
 
   slideWindow.webContents.send("slide-content-play", text);
 });
 
-ipcMain.on("black", (evt,status) => {
+ipcMain.on("black", (evt, status) => {
   slideWindow.webContents.send("black", status);
 });
 
-ipcMain.on("pc-name", (event, name) => {
-  // Connection id
-});
 
-ipcMain.on("myIP", (event, data) => {
-  //console.log('My IP')
-  ws.getIp().then(ip => {
-    event.sender.send("yourIP", ip);
-  });
-});
+
+
 ipcMain.on("open-slide-window", (event, data) => {
   if (slideWindowOpen !== true) {
     console.log("open-slide-window");
@@ -210,8 +230,14 @@ if (process.env.PROD) {
     .replace(/\\/g, "\\\\");
 }
 
+
+
+
+
 var mainWindow, splashScreen, slideWindow;
 var slideWindowOpen;
+
+
 
 function createWindow() {
   /**
@@ -313,7 +339,18 @@ function createSlideWindow() {
   }
 }
 
-app.on("ready", createWindow);
+app.on("ready", ()=>{
+  createWindow()
+  globalShortcut.register('F5', () => {
+    mainWindow.webContents.send("F5");
+  })
+  globalShortcut.register('pagedown', () => {
+    mainWindow.webContents.send("pagedown");
+  })
+  globalShortcut.register('pageup', () => {
+    mainWindow.webContents.send("pageup");
+  })
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
@@ -326,3 +363,6 @@ app.on("activate", () => {
     createWindow();
   }
 });
+
+
+

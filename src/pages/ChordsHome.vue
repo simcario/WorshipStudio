@@ -1,15 +1,14 @@
 <template>
   <q-page class="flex">
-
     <NewSongDialog :show="newSongDialog" :songEdit="songEdit" />
     <ChordViewer v-if=" this.moduleSettings.showChords=== true" :show="ChordViewer" />
     <TextViewer v-else :show="ChordViewer" />
-    <QCode :qrcode="showQCode" />
+    <!--<QCode :qrcode="showQCode" />-->
 
     <div class="row full-width q-pa-md">
       <div class="col-6 q-pa-md">
         <q-card>
-          <q-toolbar  class="bg-primary glossy text-white">
+          <q-toolbar class="bg-primary glossy text-white">
             <q-toolbar-title>Songs</q-toolbar-title>
             <q-input
               dark
@@ -25,7 +24,6 @@
                 <q-icon v-else name="clear" class="cursor-pointer" @click="clearText()" />
               </template>
             </q-input>
-           
           </q-toolbar>
           <q-card-section>
             <q-list bordered style="max-height:500px; overflow:scroll">
@@ -77,7 +75,7 @@
       <div class="col-6 q-pa-md">
         <q-tabs dense v-model="activeTab" class="bg-primary text-white shadow-2 glossy">
           <q-tab name="currentPlaylist" icon="fas fa-clock" label="Current Playlist" />
-         <q-tab name="cloudPlaylists" icon="fas fa-list" label="Cloud Playlists" >
+          <q-tab name="cloudPlaylists" icon="fas fa-list" label="Cloud Playlists">
             <q-badge v-show="cloudPlaylists.length>0" color="red" floating>{{cloudPlaylists.length}}</q-badge>
           </q-tab>
         </q-tabs>
@@ -87,7 +85,11 @@
             <q-card>
               <q-card-section></q-card-section>
               <q-card-section>
-                <q-list bordered>
+                <q-list
+                  bordered
+                  v-shortkey="{down:['arrowdown'],up:['arrowup']}"
+                  @shortkey.native="moveSong"
+                >
                   <draggable
                     class="list-group"
                     tag="div"
@@ -99,7 +101,7 @@
                       v-ripple
                       v-for="(song,index) in playlist.items"
                       :key="index"
-                      @click="openSong(song)"
+                      @click="playlistSong(index)"
                     >
                       <q-menu touch-position context-menu>
                         <!-- Context Menu -->
@@ -185,11 +187,11 @@
 import NewSongDialog from "../components/index/NewSongDialog";
 import ChordViewer from "../components/index/ChordViewer";
 import TextViewer from "../components/index/TextViewer";
-import QCode from "../components/index/QCode";
+//import QCode from "../components/index/QCode";
 import draggable from "vuedraggable";
 export default {
   name: "ChordsHome",
-  components: { NewSongDialog, ChordViewer, TextViewer, QCode, draggable },
+  components: { NewSongDialog, ChordViewer, TextViewer, draggable },
   mounted() {
     this.$root.$on("editSong", song => {
       this.songEdit = true;
@@ -201,47 +203,57 @@ export default {
     this.$root.$on("closeChordViewer", () => {
       this.ChordViewer = false;
     });
+    /*
     this.$root.$on("closeQCode", () => {
       this.showQCode = false;
     });
-   // this.$socket.emit("get_playlist");
+    */
+    // this.$socket.emit("get_playlist");
     this.$root.$on("updateSongs", () => {
-    
       this.getAllSongs();
     });
-    
-     this.$root.$on("new-song", () => {
-      this.newSong()
+
+    this.$root.$on("new-song", () => {
+      this.newSong();
     });
+    /*
     this.$root.$on('join-remote',()=>{
       this.showQCode = true
     })
+*/
 
-    this.$bus.$on('loading-true',()=>{
-
-          this.loading = true;
-    })
-     this.$bus.$on('loading-false',()=>{
-
-          this.loading = false;
-    })
-
-    this.$ws.loadAllSongs().then((songs) => {
-        this.songs = songs
-    
+    this.$bus.$on("loading-true", () => {
+      this.loading = true;
+    });
+    this.$bus.$on("loading-false", () => {
+      this.loading = false;
     });
 
-    this.$renderer.send('get-playlist')
+    this.$ws.loadAllSongs().then(songs => {
+      this.songs = songs;
+    });
 
-    this.$renderer.on("playlist-data",(evt, playlist)=>{ 
+    this.$renderer.send("get-playlist");
+
+    this.$renderer.on("playlist-data", (evt, playlist) => {
       this.playlist = playlist;
+    });
 
-    })
+     this.$renderer.on("F5", (evt) => {
+      this.playlistSong(0)
+    });
 
-    this.$renderer.on("song",(evt)=>{ 
+    this.$renderer.on("pagedown", (evt) => {
+      this.nextSong()
+    });
+     this.$renderer.on("pageup", (evt) => {
+      this.prevSong()
+    });
+
+    this.$renderer.on("song", evt => {
       this.ChordViewer = true;
-    })
-    
+    });
+
     this.getCloudPlaylists();
   },
   data() {
@@ -264,14 +276,15 @@ export default {
       currentPlaylistTitle: null,
       cloudPlaylists: [],
       playlist: [],
+      currentPlaylistSongIndex: null,
       selectedSection: null
     };
   },
   methods: {
-    clearText(){
-       let songs = this.$store.getters["defaultModule/getSongs"];
-       this.searchText = ''
-       this.songs = songs
+    clearText() {
+      let songs = this.$store.getters["defaultModule/getSongs"];
+      this.searchText = "";
+      this.songs = songs;
     },
     newSong() {
       this.songEdit = false;
@@ -306,9 +319,8 @@ export default {
       });
     },
     openSong(song) {
-      this.$renderer.send('song', song)
+      this.$renderer.send("song", song);
       //this.$root.$emit("song", song)
-   
     },
     editSong(song) {
       this.$root.$emit("editSong", song);
@@ -321,10 +333,10 @@ export default {
         .update({ deleted: true });
 
       */
-     this.$ws.deleteSong(this.deleteSongID).then(songs=>{
-       this.songs= songs
-     })
-      
+      this.$ws.deleteSong(this.deleteSongID).then(songs => {
+        this.songs = songs;
+      });
+
       this.$q.notify({
         message: "Song was deleted",
         color: "positive",
@@ -355,7 +367,6 @@ export default {
       });
     },
     removeCloudPlaylist(id) {
-
       this.$q.notify({
         message: "Cloud Playlist will be removed. Continue?",
         color: "primary",
@@ -372,6 +383,55 @@ export default {
           { label: "No", color: "white" }
         ]
       });
+    },
+    playlistSong(index) {
+      this.currentPlaylistSongIndex = index;
+      const song = this.playlist.items[index];
+      this.$renderer.send("song", song);
+    },
+    nextSong() {
+      const index = this.currentPlaylistSongIndex + 1;
+      if (index < this.playlist.items.length) {
+        this.playlistSong(index);
+      }
+    },
+    prevSong() {
+      const index = this.currentPlaylistSongIndex - 1;
+       if (index > -1) {
+            this.playlistSong(index);
+          }
+    },
+    moveSong(event) {
+      let index;
+      event.preventDefault()
+      console.log(event.srcKey)
+       switch (event.srcKey) {
+        case "up":
+          index = this.currentPlaylistSongIndex - 1;
+          if (index > -1) {
+            this.playlistSong(index);
+          }
+          break;
+          case "pageup":
+          index = this.currentPlaylistSongIndex - 1;
+          if (index > -1) {
+            this.playlistSong(index);
+          }
+          break;
+        case "down":
+          index = this.currentPlaylistSongIndex + 1;
+          if (index < this.playlist.items.length) {
+            this.playlistSong(index);
+          }
+          break;
+          case "pagedown":
+          index = this.currentPlaylistSongIndex + 1;
+          if (index < this.playlist.items.length) {
+            this.playlistSong(index);
+          }
+          break;
+      }
+     
     }
   },
   computed: {
@@ -381,11 +441,11 @@ export default {
         organizationID: this.$store.getters["defaultModule/getOrganizationID"]
       };
     },
-    moduleSettings(){
-      return this.$store.getters['defaultModule/getModuleChords']
+    moduleSettings() {
+      return this.$store.getters["defaultModule/getModuleChords"];
     },
-    computerName(){
-       return this.$store.getters['defaultModule/getComputerName']
+    computerName() {
+      return this.$store.getters["defaultModule/getComputerName"];
     }
   },
   watch: {}

@@ -681,5 +681,28 @@ export const ws_helpers = {
   },
   appMinimize() {
     Vue.prototype.$renderer.send("app-minimize");
+  },
+  clearStorage(){
+    return new Promise((res, rej)=>{
+      localStorage.removeItem("licenseName");
+      localStorage.removeItem("licenseEmail");
+      localStorage.removeItem("licenseType");
+      localStorage.removeItem("computerName");
+      localStorage.removeItem("startModule");
+      localStorage.removeItem("validUntil");
+      localStorage.removeItem("moduleChords");
+      localStorage.removeItem("firstConfig");
+      localStorage.removeItem("displayName");
+      localStorage.removeItem("email");
+      localStorage.removeItem("internet");
+      localStorage.removeItem("licenseExpired");
+      localStorage.removeItem("licenseKey");
+      localStorage.removeItem("networkEnabled");
+      localStorage.removeItem("organizationID");
+      localStorage.removeItem("organizationName");
+      localStorage.removeItem("loggedIn");
+      localStorage.removeItem("songs");
+      res('ok')
+     })
   }
 };
