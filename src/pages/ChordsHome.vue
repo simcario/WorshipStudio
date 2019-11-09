@@ -174,6 +174,8 @@
       </div>
     </div>
     <!-- Playlist -->
+
+    <UpdateDialog :updateDialog="updateDialog" :data="updateData"></UpdateDialog>
     <q-inner-loading :showing="loading">
       <q-spinner-gears size="50px" color="primary" />
     </q-inner-loading>
@@ -187,11 +189,12 @@
 import NewSongDialog from "../components/index/NewSongDialog";
 import ChordViewer from "../components/index/ChordViewer";
 import TextViewer from "../components/index/TextViewer";
+import UpdateDialog from '../components/index/NewUpdateDialog'
 //import QCode from "../components/index/QCode";
 import draggable from "vuedraggable";
 export default {
   name: "ChordsHome",
-  components: { NewSongDialog, ChordViewer, TextViewer, draggable },
+  components: { NewSongDialog, ChordViewer, TextViewer, draggable, UpdateDialog },
   mounted() {
     this.$root.$on("editSong", song => {
       this.songEdit = true;
@@ -203,12 +206,7 @@ export default {
     this.$root.$on("closeChordViewer", () => {
       this.ChordViewer = false;
     });
-    /*
-    this.$root.$on("closeQCode", () => {
-      this.showQCode = false;
-    });
-    */
-    // this.$socket.emit("get_playlist");
+  
     this.$root.$on("updateSongs", () => {
       this.getAllSongs();
     });
@@ -216,14 +214,19 @@ export default {
     this.$root.$on("new-song", () => {
       this.newSong();
     });
-    /*
-    this.$root.$on('join-remote',()=>{
-      this.showQCode = true
-    })
-*/
+   this.$root.$on("close-update-dialog", () => {
+      this.updateDialog = false;
+    });
+  
 
     this.$bus.$on("loading-true", () => {
       this.loading = true;
+    });
+
+    this.$bus.$on("new-version", (data) => {
+    
+     this.updateDialog = true,
+     this.updateData = data;
     });
     this.$bus.$on("loading-false", () => {
       this.loading = false;
@@ -259,6 +262,8 @@ export default {
   data() {
     return {
       loading: false,
+      updateDialog:false,
+      updateData:null,
       activeTab: "currentPlaylist",
       showQCode: false,
       newSongDialog: false,
@@ -386,6 +391,7 @@ export default {
     },
     playlistSong(index) {
       this.currentPlaylistSongIndex = index;
+      console.log('Current Index:', index)
       const song = this.playlist.items[index];
       this.$renderer.send("song", song);
     },

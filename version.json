@@ -1,0 +1,13 @@
+{
+  "version": "1.0.3",
+  "release_date": "20/10/2019",
+  "bug_fixes": [],
+  "new_features": [
+    {
+      "feature": "P2P connection between clients"
+    },
+    {
+      "feature": "Shortkeys to control playlist"
+    }
+  ]
+}

@@ -14,8 +14,8 @@
       <div class="col-4 q-pa-md">
         <q-tabs v-model="activeTab" class="bg-purple text-white shadow-2 glossy">
           <q-tab name="songs" icon="fas fa-guitar" label="Songs" />
-          <q-tab name="announces" icon="fas fa-bullhorn" label="Announces" > 
-             <q-badge v-show="announces.length>0" color="red" floating>{{announces.length}}</q-badge>
+          <q-tab name="announces" icon="fas fa-bullhorn" label="Announces">
+            <q-badge v-show="announces.length>0" color="red" floating>{{announces.length}}</q-badge>
           </q-tab>
         </q-tabs>
         <q-tab-panels v-model="activeTab">
@@ -88,7 +88,7 @@
                 />
               </q-card-section>
               <q-card-section>
-                <q-input filled v-model="announceExpiry" readonly label="Expiry"  >
+                <q-input filled v-model="announceExpiry" readonly label="Expiry">
                   <template v-slot:append>
                     <q-icon name="event" class="cursor-pointer">
                       <q-popup-proxy
@@ -96,11 +96,11 @@
                         transition-show="scale"
                         transition-hide="scale"
                       >
-                        <q-date 
-                        v-model="announceExpiry" 
-                        @input="() => $refs.qDateProxy.hide()"
-                        mask="DD/MM/YYYY"
-                         />
+                        <q-date
+                          v-model="announceExpiry"
+                          @input="() => $refs.qDateProxy.hide()"
+                          mask="DD/MM/YYYY"
+                        />
                       </q-popup-proxy>
                     </q-icon>
                   </template>
@@ -145,7 +145,7 @@
       <div class="col-4 q-pa-md">
         <q-tabs v-model="activePlaylistTab" class="bg-purple text-white shadow-2 glossy">
           <q-tab name="currentPlaylist" icon="fas fa-clock" label="Current Playlist" />
-          <q-tab name="cloudPlaylists" icon="fas fa-list" label="Cloud Playlists" >
+          <q-tab name="cloudPlaylists" icon="fas fa-list" label="Cloud Playlists">
             <q-badge v-show="cloudPlaylists.length>0" color="red" floating>{{cloudPlaylists.length}}</q-badge>
           </q-tab>
         </q-tabs>
@@ -182,7 +182,12 @@
                       </q-menu>
                       <q-item-section>
                         <div>
-                          <q-badge color="purple" text-color="white" :floating="false" :label="index+1" />
+                          <q-badge
+                            color="purple"
+                            text-color="white"
+                            :floating="false"
+                            :label="index+1"
+                          />
                           {{song.title}}
                         </div>
                       </q-item-section>
@@ -257,8 +262,103 @@
                   class="col-auto slide"
                   v-bind:class="{'selectedSlide': selectedSlide(index)}"
                   @click="playSlide(slide,index)"
+                  v-bind:style="$ws.getSlideBackround(currentSongId,index)"
+                  style="background-size: cover"
                 >
-                  <div class="centered">{{slide.text}}</div>
+                  <!-- Slide Context Menu -->
+
+                  <q-menu touch-position context-menu>
+                    <!-- Context Menu -->
+                    <q-list dense style="min-width: 100px">
+                      <q-item
+                        clickable
+                        v-close-popup
+                        @click="$renderer.send('choose-slide-background', {songID:currentSongId, slideIndex:index,backgroundType:'image'})"
+                      >
+                        <q-item-section avatar>
+                          <q-icon size="16px" name="fas fa-image" />
+                        </q-item-section>
+                        <q-item-section>Background Image</q-item-section>
+                      </q-item>
+                      <q-item
+                        clickable
+                        v-close-popup
+                        @click="$renderer.send('choose-slide-background', {songID:currentSongId, slideIndex:index,backgroundType:'video'})"
+                      >
+                        <q-item-section avatar>
+                          <q-icon size="16px" name="fas fa-film" />
+                        </q-item-section>
+                        <q-item-section>Background Video</q-item-section>
+                      </q-item>
+                      <q-item clickable>
+                        <q-popup-proxy
+                          v-close-popup
+                          transition-show="scale"
+                          transition-hide="scale"
+                        >
+                          <q-color
+                            v-model="backgroundColor"
+                            no-header
+                            no-footer
+                            default-view="palette"
+                            class="my-picker"
+                            @input="setSlideBakgroundColor({
+                              songID:currentSongId, 
+                              slideIndex:index,backgroundType:'color',
+                              backgroundColor:backgroundColor
+                              })"
+                            v-close-popup
+                          />
+                        </q-popup-proxy>
+                        <q-item-section avatar>
+                          <q-icon name="colorize" class="cursor-pointer"></q-icon>
+                        </q-item-section>
+                        <q-item-section>Background Color</q-item-section>
+                      </q-item>
+                      <q-item clickable>
+                        <q-popup-proxy
+                          v-close-popup
+                          transition-show="scale"
+                          transition-hide="scale"
+                        >
+                          <q-color
+                            v-model="textColor"
+                            no-header
+                            no-footer
+                            default-view="palette"
+                            class="my-picker"
+                            @input="setSlideTextColor({
+                              songID:currentSongId, 
+                              slideIndex:index,
+                              textColor:textColor
+                              })"
+                            v-close-popup
+                          />
+                        </q-popup-proxy>
+                        <q-item-section avatar>
+                          <q-icon name="fas fa-font" class="cursor-pointer"></q-icon>
+                        </q-item-section>
+                        <q-item-section>Text Color</q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-menu>
+                  <!-- End Slide Context Menu -->
+                  <div style="width: 100%;height:100%" v-if="$ws.getSlideBackgroundInfo(currentSongId,index).backgroundType === 'video'">
+                    
+                    <div style="position:absolute; top:0px; z:index:0">
+                      <div class="centered" id="videocontainer" @mouseenter="getElementById('#video').play()"  style="width: 100%; height: 100%;  position:absolute; padding-top:5px" v-bind:style="$ws.getSlideTextColor()" >{{slide.text}}</div>
+                      <video
+                      
+                      muted
+                      loop
+                      v-if="$ws.getSlideBackgroundInfo(currentSongId,index).backgroundType === 'video'"
+                      id="video"
+                      :src="$ws.getSlideBackgroundInfo(currentSongId,index).filePath"
+                      style="width: 100%; height: 100%;"
+                    ></video>
+                    </div>
+                  </div>
+                  <div class="centered" v-bind:style="$ws.getSlideTextColor(currentSongId,index)" v-else >{{slide.text}}</div>
                 </div>
               </div>
             </q-card-section>
@@ -267,6 +367,11 @@
       </div>
       <!-- Slides -->
     </div>
+    <!--
+        <video src="file:///C:/Users/Simonpietro/Documents/worshipstudio/videos/video.mp4" controls>
+          Your browser does not support the <code>video</code> element.
+        </video>
+    -->
     <q-inner-loading :showing="loading">
       <q-spinner-gears size="50px" color="primary" />
     </q-inner-loading>
@@ -282,6 +387,8 @@ export default {
   name: "SlidesHome",
   components: { NewSongDialog, draggable },
   mounted() {
+    console.log("Songs Local Settings", this.songsLocalSettings);
+  
     this.getAnnounces();
     this.getCloudPlaylists();
     this.$renderer.send("open-slide-window");
@@ -317,10 +424,21 @@ export default {
       this.showQCode = true;
     });
 */
-      this.$renderer.send('get-playlist')
-    this.$renderer.on("playlist-data",(evt, playlist)=>{ 
+    this.$renderer.send("get-playlist");
+    this.$renderer.on("playlist-data", (evt, playlist) => {
       this.playlist = playlist;
-    })  
+    });
+
+    this.$renderer.on("slide-background-selected", (evt, data) => {
+      this.$store.dispatch("defaultModule/setSongLocalSetting", {
+        type: "slide-background",
+        songID: data.songID,
+        slideIndex: data.slideIndex,
+        filePath: data.filePath,
+        backgroundColor: "",
+        backgroundType: data.backgroundType
+      });
+    });
 
     this.$ws.loadAllSongs().then(songs => {
       this.songs = songs;
@@ -336,6 +454,8 @@ export default {
       newSongDialog: false,
       songEdit: false,
       slideWindow: true,
+      backgroundColor: "#ff0000",
+      textColor: "#ffffff",
       leftDrawerOpen: false,
       searchText: "",
       selectedSlideText: null,
@@ -349,6 +469,7 @@ export default {
       playlist: {},
       playlistID: null,
       currentSong: null,
+      currentSongId: null,
       songParts: [],
       announces: [],
       announceText: "",
@@ -359,10 +480,10 @@ export default {
   },
   methods: {
     openURL,
-     clearText(){
-       let songs = this.$store.getters["defaultModule/getSongs"];
-       this.searchText = ''
-       this.songs = songs
+    clearText() {
+      let songs = this.$store.getters["defaultModule/getSongs"];
+      this.searchText = "";
+      this.songs = songs;
     },
     newSong() {
       this.editSong = false;
@@ -400,6 +521,7 @@ export default {
     openSong(song) {
       let sections = [];
       this.selectedSlideIndex = null;
+      this.currentSongId = song.songid;
       song.columns.forEach(element => {
         element.sections.forEach(section => {
           sections.push(section);
@@ -447,16 +569,20 @@ export default {
     playSlide(slide, index) {
       this.selectedSlideText = slide.text;
       this.selectedSlideIndex = index;
-      this.$renderer.send("slide", this.selectedSlideText)
+      let slideData = {
+        text: slide.text,
+        index: index,
+        songID: this.currentSongId
+      };
+      this.$renderer.send("slide", slideData);
       //this.$socket.emit("slide", this.selectedSlideText);
     },
     toggleBlack() {
       if (this.black === false) {
-      
-        this.$renderer.send("black", true)
+        this.$renderer.send("black", true);
         this.black = true;
       } else {
-       this.$renderer.send("black", false)
+        this.$renderer.send("black", false);
         this.black = false;
       }
     },
@@ -543,11 +669,32 @@ export default {
           { label: "No", color: "white" }
         ]
       });
-    }
+    },
+    setSlideBakgroundColor(data) {
+      this.$store.dispatch("defaultModule/setSongLocalSetting", {
+        type: "slide-background",
+        songID: data.songID,
+        slideIndex: data.slideIndex,
+        backgroundColor: data.backgroundColor,
+        imagePath: "",
+        backgroundType: "color"
+      });
+    },
+    setSlideTextColor(data) {
+      this.$store.dispatch("defaultModule/setSongLocalSetting", {
+        type: "text-color",
+        songID: data.songID,
+        slideIndex: data.slideIndex,
+        textColor: data.textColor
+      });
+    },
   },
   computed: {
     isBlack() {
       return this.black === true ? "blue" : "white";
+    },
+    songsLocalSettings() {
+      return this.$store.getters["defaultModule/getSongsLocalSettings"];
     }
   },
   watch: {
@@ -558,7 +705,7 @@ export default {
 };
 </script>
 
-<style>
+<style >
 .pageTitle {
   font-family: "damion";
   font-weight: bold;
@@ -573,7 +720,6 @@ export default {
   text-align: center;
   text-transform: uppercase;
   margin: 5px;
-  padding: 5px;
   width: 320px !important;
   height: 180px !important;
   justify-content: center;
@@ -598,5 +744,18 @@ export default {
 .bridge {
   font-weight: bold;
   font-style: italic;
+}
+video#bgvid {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  z-index: -100;
+
+  background-size: cover;
+  z-index: 0;
 }
 </style>

@@ -1,7 +1,10 @@
 import Vue from "vue";
-import { firestoreAction } from 'vuexfire'
+import {
+  firestoreAction
+} from 'vuexfire'
 import axios from "axios";
 import db from "../../helpers/firebase"
+
 
 export function login(context, credentials) {
   return new Promise((resolve, reject) => {
@@ -37,7 +40,7 @@ export function login(context, credentials) {
                   Vue.prototype.$ws
                     .checkLicense(localStorage.getItem("licenseKey"))
                     .then(licenseInfo => {
-                       console.log('License Info', licenseInfo)
+                      console.log('License Info', licenseInfo)
 
                       let firstConfig = localStorage.getItem("firstConfig");
                       //console.log(firstConfig, typeof firstConfig);
@@ -135,7 +138,9 @@ export function savePreferences(context, preferences) {
     localStorage.setItem("startModule", preferences.startModule);
     localStorage.setItem("moduleChords", preferences.moduleChords);
     context.commit("retrieveSettings", preferences);
-    resolve({ response: "ok" });
+    resolve({
+      response: "ok"
+    });
   });
 }
 
@@ -143,7 +148,9 @@ export function saveMobilePreferences(context, preferences) {
   return new Promise((resolve, reject) => {
     localStorage.setItem("serverAddress", preferences.serverAddress);
     context.commit("retrieveMobileSettings", preferences);
-    resolve({ response: "ok" });
+    resolve({
+      response: "ok"
+    });
   });
 }
 
@@ -171,7 +178,7 @@ export function internetStatus(context, status) {
 }
 
 export function serverAddress(context, serverAddress) {
- // var serverAddress = 'http://'+ ip + ':7777';
+  // var serverAddress = 'http://'+ ip + ':7777';
   return new Promise((res, rej) => {
     localStorage.setItem("serverAddress", serverAddress);
     context.commit("retrieveServerAddresss", serverAddress);
@@ -189,11 +196,84 @@ export function licenseExpired(context, expired) {
 
 export function setSongs(context, songs) {
   return new Promise((res, rej) => {
-    localStorage.setItem("songs", songs);
+    localStorage.setItem("songs", songs.songs);
+    localStorage.setItem("songsList", songs.songList);
     context.commit("retrieveSongs", songs);
     res("OK");
   });
 }
 
+export function setSongLocalSetting(context, settings) {
+  return new Promise((res, rej) => {
+    let currentSettings = JSON.parse(localStorage.getItem('songsLocalSettings'));
+    if (currentSettings === null) {
+      currentSettings = {}
+    }
+    if (currentSettings[settings.songID] === undefined) {
+      currentSettings[settings.songID] = {}
+    }
+    if (currentSettings[settings.songID]['slides'] === undefined) {
+      currentSettings[settings.songID]['slides'] = {}
+    }
+    if (currentSettings[settings.songID]['slides'][settings.slideIndex] === undefined) {
+      currentSettings[settings.songID]['slides'][settings.slideIndex] = {}
+    }
+    switch (settings.type) {
+      case 'slide-background':
+        currentSettings[settings.songID]['slides'][settings.slideIndex]['background'] = {
+          backgroundType: settings.backgroundType,
+          imagePath: settings.filePath,
+          backgroundColor: settings.backgroundColor
+        }
+        break;
+      case 'text-color':
+        currentSettings[settings.songID]['slides'][settings.slideIndex]['textColor'] = settings.textColor
 
+        break;
+    }
 
+    localStorage.setItem("songsLocalSettings", JSON.stringify(currentSettings));
+    context.commit("retrieveSongsLocalSettings", currentSettings);
+
+  });
+}
+
+export function setSongTemplate(context, songInfo) {
+  return new Promise(res => {
+    let songsLocalSettings = JSON.parse(localStorage.getItem('songsLocalSettings')) || {};
+
+    if (songsLocalSettings[songInfo.songID] === undefined) {
+      songsLocalSettings[songInfo.songID] = {}
+    }
+    if (songsLocalSettings[songInfo.songID]['slides'] === undefined) {
+      songsLocalSettings[songInfo.songID]['slides'] = {}
+    }
+    if (songsLocalSettings[songInfo.songID]['slides'][songInfo.slideIndex] === undefined) {
+      songsLocalSettings[songInfo.songID]['slides'][songInfo.slideIndex] = {}
+    }
+    songsLocalSettings[songInfo.songID]['slides'][songInfo.slideIndex]['template'] = songInfo.template
+    localStorage.setItem("songsLocalSettings", JSON.stringify(songsLocalSettings));
+    context.commit("retrieveSongsLocalSettings", songsLocalSettings);
+    res("OK");
+  })
+}
+
+export function saveSlideTemplate(context, template) {
+  return new Promise((res, rej) => {
+    let templates = JSON.parse(localStorage.getItem('slideTemplates')) || {};
+    templates[template.id] = template;
+    localStorage.setItem("slideTemplates", JSON.stringify(templates));
+    context.commit("retrieveSlideTemplates", templates)
+    res('ok')
+  })
+}
+
+export function deleteSongTemplate(context, id) {
+  return new Promise((res, rej) => {
+    let templates = JSON.parse(localStorage.getItem('slideTemplates')) || {};
+    delete templates[id]
+    localStorage.setItem("slideTemplates", JSON.stringify(templates));
+    context.commit("retrieveSlideTemplates", templates)
+    res('ok')
+  })
+}

@@ -4,8 +4,14 @@ import firebase from "firebase/app";
 //import "firebase/firebase-auth";
 import Vue from "vue";
 import VueDraggableResizable from "vue-draggable-resizable";
+import VueResizeText from "vue-resize-text"
 import { Notify } from 'quasar'
+import VueVideoSection from 'vue-video-section'
+import VueFuse from 'vue-fuse'
+ 
 
+
+require('vue2-animate/dist/vue2-animate.min.css')
 import electron from 'electron'
 const {
   ipcRenderer
@@ -36,7 +42,9 @@ export default ({
   Vue.component("nl2br", Nl2br);
   Vue.component("vue-draggable-resizable", VueDraggableResizable);
   Vue.use(require('vue-shortkey'))
-
+  Vue.use(VueResizeText)
+  Vue.use(VueFuse)
+  Vue.component('vue-video-section', VueVideoSection)
   const loginInfo = {
     loggedIn: store.getters["defaultModule/getLoggedIn"],
     organizationName: store.getters["defaultModule/getOrganizationName"],
@@ -56,6 +64,7 @@ export default ({
   Vue.prototype.$firestore = db.firestore();
   Vue.prototype.$peers = {}
   Vue.prototype.$bus = new Vue()
+  Vue.prototype.$ver = "1.0.3"
 
   const pcName = store.getters["defaultModule/getComputerName"]
 
@@ -78,6 +87,7 @@ export default ({
   })
 
 
+  ws_helpers.versionControl();
 
   ws_helpers.checkInternetConnection().then(res => {
     store.dispatch("defaultModule/internetStatus", res).then(() => {});

@@ -20,11 +20,11 @@
                 </q-item-section>
                 <q-item-section>Sync</q-item-section>
               </q-item>
-              <q-item clickable @click="$root.$emit('join-remote')">
+              <q-item clickable @click="$ws.versionControl()">
                 <q-item-section avatar style="min-width: 16px;">
-                  <q-icon name="fas fa-qrcode" size="12px" />
+                  <q-icon name="fas fa-download" size="12px" />
                 </q-item-section>
-                <q-item-section>Join Remote Control</q-item-section>
+                <q-item-section>Check For Updates</q-item-section>
               </q-item>
               <q-separator />
               <q-item clickable @click="$ws.appQuit()">
@@ -60,6 +60,12 @@
                   <q-icon name="slideshow" size="12px" />
                 </q-item-section>
                 <q-item-section>Slides</q-item-section>
+              </q-item>
+              <q-item clickable @click="$router.push({path:'/Slides'})">
+                <q-item-section avatar style="min-width: 16px;">
+                  <q-icon name="slideshow" size="12px" />
+                </q-item-section>
+                <q-item-section>New Layout</q-item-section>
               </q-item>
             </q-list>
           </q-menu>
@@ -103,7 +109,8 @@
     <q-page-container>
       <router-view />
 
-      <q-bar dense class="fixed-bottom">
+     <q-footer>
+        <q-bar dense class="bg-black text-white">
         <q-space />
 
         <q-btn
@@ -141,6 +148,7 @@
         </q-btn>
       
       </q-bar>
+     </q-footer>
       <q-dialog v-model="alert">
         <q-card>
           <q-card-section>

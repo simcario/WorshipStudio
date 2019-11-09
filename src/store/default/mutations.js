@@ -68,5 +68,14 @@ export function retrieveLicenseExpired(state, expired){
 }
 
 export function retrieveSongs(state, songs){
-    state.songs = JSON.parse(songs)
+    state.songs = JSON.parse(songs.songs)
+    state.songList = JSON.parse(songs.songList)
+}
+
+export function retrieveSongsLocalSettings (state, settings){
+    state.songsLocalSettings = settings
+}
+
+export function retrieveSlideTemplates (state, templates){
+    state.slideTemplates = templates
 }

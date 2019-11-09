@@ -16,9 +16,7 @@ export function getOrganizationID(state) {
 export function getStartModule(state) {
     return state.startModule
 }
-export function serverAddress(state) {
-    return state.serverAddress
-}
+
 export function getComputerType(state) {
     return state.computerType
 }
@@ -58,7 +56,18 @@ export function getLicenseExpired(state){
 export function getSongs(state){
     return state.songs
 }
+export function getSongList(state){
+    return state.songList
+}
 
 export function getModuleChords(state){
     return state.moduleChords
+}
+
+export function getSongsLocalSettings(state){
+    return state.songsLocalSettings
+}
+
+export function getSlideTemplates(state){
+    return state.slideTemplates
 }

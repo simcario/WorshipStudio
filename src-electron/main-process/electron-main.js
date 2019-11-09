@@ -15,7 +15,7 @@ var http = require("http").createServer(server);
 http.listen(7777)
 
 const electron = require("electron");
-
+const shell = require('electron').shell;
 const PCName = store.get('pc-name') || 'COMPUTER'
 //import { ws } from "./ws";
 
@@ -24,7 +24,8 @@ import {
   BrowserWindow,
   Menu,
   ipcMain,
- globalShortcut
+  dialog,
+  globalShortcut
 } from "electron";
 
 
@@ -35,6 +36,13 @@ const api = require("../routes/api");
 
 server.use("/api", api);
 server.disable("etag");
+
+server.get('/file/:name', (req, res) => {
+  let filename = req.params.name
+  res.sendFile(filename)
+  console.log(filename)
+
+})
 /*
 ws.scanNetwork().then(ips => {
   console.log(ips);
@@ -80,77 +88,21 @@ const config = {
   id: myId + '{wsarray}' + PCName
 };
 const sw = swarm(config);
-(() => {
-  sw.listen(7778);
-  console.log("P2P Listening");
-  
-  sw.join("worshipstudio");
-
-
-  sw.on("connection", (conn, info) => {
-    
-    console.log(info.port)
-
-      // Connection id
-    const seq = connSeq;
-    
-    const peerId = info.id.toString();
-    const peeArray = peerId.split(/{wsarray}/)
-    const peerName = peeArray[1]
-
-    console.log(`Connected #${seq} to peer: ${peerName}`);
-
-
-  
-
-    conn.on("data", data => {
-      // Here we handle incomming messages
-      let message = JSON.parse(data.toString());
-      let content = message.message;
-      switch (message.type) {
-        case "song":
-          mainWindow.webContents.send('song', content)
-          break;
-        case "playlist-data":
-          mainWindow.webContents.send('playlist-data', content)
-          break;
-
-      }
-    });
-
-    conn.on("close", () => {
-      // Here we handle peer disconnection
-      console.log(`Connection ${seq} closed, peer id: ${peerName}`);
-      delete clients[peerId]
-      mainWindow.webContents.send('peers', clients)
-      console.log('Peers length', Object.keys(clients).length)
-    });
-    if (!clients[peerId]) {
-      clients[peerId] = {};
-    }
-    clients[peerId].conn = conn;
-    clients[peerId].swq = connSeq;
-    clients[peerId].name = peerName;
-    console.log('Peers length', Object.keys(clients).length)
-    mainWindow.webContents.send('peers', clients)
-    mainWindow.webContents.send('newPeer', peerName)
-    connSeq++;
-   
-  });
-})()
 
 
 ipcMain.on("pc-name", (event, name) => {
 
- 
   store.set('pc-name', name)
 
 });
 
-
+ipcMain.on('open-download-link', (evt) => {
+  shell.openExternal("https://www.simonpietro.it/worshipstudio/downloads/WorshipStudio.exe");
+  app.quit()
+})
 
 ipcMain.on('song', (event, song) => {
-  sendMessage('song', song)
+  // sendMessage('song', song)
   mainWindow.webContents.send('song', song)
 })
 
@@ -175,13 +127,19 @@ ipcMain.on("update-playlist", (evt, content) => {
 });
 
 
-ipcMain.on("slide", (evt, text) => {
+ipcMain.on("slide", (evt, slide) => {
 
-  slideWindow.webContents.send("slide-content-play", text);
+  if (slideWindow !== undefined) {
+    slideWindow.webContents.send("slide-content-play", slide);
+    slideWindow.webContents.send("slide-content-play", slide);
+  }
+
 });
 
 ipcMain.on("black", (evt, status) => {
-  slideWindow.webContents.send("black", status);
+  if (slideWindow !== undefined) {
+    slideWindow.webContents.send("black", status);
+  }
 });
 
 
@@ -214,6 +172,56 @@ ipcMain.on("restart-app", (event, data) => {
   app.relaunch();
   app.quit();
 });
+
+ipcMain.on("choose-slide-background", (event, data) => {
+
+  const options = {
+    title: 'Choose Background for Slide',
+    //defaultPath: '/path/to/something/',
+    //buttonLabel: 'Do it',
+    /*filters: [
+      { name: 'xml', extensions: ['xml'] }
+    ],*/
+    //properties: ['showHiddenFiles'],
+    //message: 'This message will only be shown on macOS'
+  };
+
+  if (data.backgroundType === 'image' || data.backgroundType === 'video') {
+    dialog.showOpenDialog(null, options, (filePaths) => {
+ 
+      event.sender.send('slide-background-selected', {
+        filePath: filePaths[0],
+        songID: data.songID,
+        slideIndex: data.slideIndex,
+        backgroundType: data.backgroundType
+      })
+    });
+  }
+})
+
+ipcMain.on("select-file", (event, data) => {
+
+  const options = {
+    title: data.title,
+    //defaultPath: '/path/to/something/',
+    //buttonLabel: 'Do it',
+   filters:data.filters
+    /*[
+      { name: 'xml', extensions: ['xml'] }
+    ],*/
+    //properties: ['showHiddenFiles'],
+    //message: 'This message will only be shown on macOS'
+  };
+
+
+    dialog.showOpenDialog(null, options, (filePaths) => {
+      event.sender.send(data.event, {
+        filePath: filePaths[0],
+        data: data.data
+      })
+    });
+
+})
 
 var secret = "W0rsh1pstudi0";
 
@@ -252,7 +260,8 @@ function createWindow() {
     icon: require("path").join(__statics, "icons/64x64.png"),
     useContentSize: true,
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true,
+      webSecurity: false
     }
   });
   mainWindow.on("close", event => {
@@ -265,11 +274,11 @@ function createWindow() {
   });
 
   mainWindow.loadURL(process.env.APP_URL);
-  setTimeout(() => {
+ // setTimeout(() => {
     mainWindow.maximize();
-  }, 6000);
-  mainWindow.hide();
-  createSplashScreen();
+  //}, 6000);
+  //mainWindow.hide();
+ // createSplashScreen();
 }
 
 function createSplashScreen() {
@@ -305,7 +314,7 @@ function createSplashScreen() {
 }
 
 function createSlideWindow() {
-  console.log("opening");
+
   slideWindowOpen = true;
   var electronScreen = electron.screen;
   var displays = electronScreen.getAllDisplays();
@@ -314,7 +323,7 @@ function createSlideWindow() {
     if (displays[i].bounds.x != 0 || displays[i].bounds.y != 0) {
       externalDisplay = displays[i];
       break;
-    }
+   }
   }
 
   if (externalDisplay) {
@@ -326,7 +335,8 @@ function createSlideWindow() {
       useContentSize: true,
       webPreferences: {
         nodeIntegration: true,
-        devTools: false
+        //devTools: false,
+        webSecurity: false
       }
     });
     slideWindow.on("close", () => {
@@ -339,11 +349,19 @@ function createSlideWindow() {
   }
 }
 
-app.on("ready", ()=>{
+app.on("ready", () => {
   createWindow()
   globalShortcut.register('F5', () => {
     mainWindow.webContents.send("F5");
   })
+  /*
+  globalShortcut.register('left', () => {
+    mainWindow.webContents.send("left");
+  })
+  globalShortcut.register('right', () => {
+    mainWindow.webContents.send("right");
+  })
+  */
   globalShortcut.register('pagedown', () => {
     mainWindow.webContents.send("pagedown");
   })
@@ -363,6 +381,3 @@ app.on("activate", () => {
     createWindow();
   }
 });
-
-
-

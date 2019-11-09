@@ -62,7 +62,7 @@ const routes = [
   },
   {
     path: '/slide',
-    component: () => import('pages/Slide.vue'),
+    component: () => import('pages/SlideWindow.vue'),
     children: [
      
     ]
@@ -72,6 +72,13 @@ const routes = [
     component: () => import('layouts/SlideManager.vue'),
     children: [
       { path: '', component: () => import('pages/SlidesHome.vue') }
+    ]
+  },
+  {
+    path: '/Slides',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', component: () => import('pages/Slides.vue') }
     ]
   },
   {

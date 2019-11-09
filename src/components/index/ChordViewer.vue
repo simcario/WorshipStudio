@@ -56,8 +56,18 @@ export default {
   mounted() {
   
     this.$renderer.on("song",(event,song)=>{
+      console.log(song)
       this.song = song
     })
+
+    this.$renderer.on("left", (evt) => {
+      this.transpose--
+     
+    });
+    this.$renderer.on("right", (evt) => {
+      this.transpose++
+        
+    });
   },
   data() {
     return {
@@ -81,7 +91,7 @@ export default {
       this.$root.$emit("closeChordViewer");
     },
     transposedChords(chords) {
-      return this.$ws.transpose(chords, this.transpose);
+      return this.$ws.transpose(chords, this.transpose, this.song.notation);
     }
   },
   computed: {
@@ -89,6 +99,18 @@ export default {
       return this.song.column[this.selectedColumn].sections[
         this.selectedSection
       ].chords;
+    }
+  },
+  watch:{
+    transpose(){
+       console.log("TRANSPOSE PRIMA",this.transpose)
+      if(this.transpose > 11){
+        this.transpose = 0;
+      }
+      if(this.transpose === -1){
+        this.transpose = 11 
+      }
+       console.log("TRANSPOSE DOPO",this.transpose)
     }
   }
 };

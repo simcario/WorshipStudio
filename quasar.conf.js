@@ -84,7 +84,10 @@ module.exports = function (ctx) {
         'QBadge',
         'QDate',
         'QPopupProxy',
-        'QToggle'
+        'QToggle',
+        'QColor',
+        'QFooter',
+        'QBtnGroup'
       ],
 
       directives: [

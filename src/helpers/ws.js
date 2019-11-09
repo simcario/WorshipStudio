@@ -1,7 +1,9 @@
 import Vue from "vue";
 import axios from "axios";
 import SimpleCrypto from "simple-crypto-js";
-import { Notify } from "quasar";
+import {
+  Notify
+} from "quasar";
 
 const bus = new Vue();
 
@@ -15,264 +17,530 @@ export const ws_helpers = {
       position: "center"
     });
   },
+
+
   today() {
     let d = new Date();
 
     return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
   },
-  transpose: (txtChords, val) => {
+  transpose: (txtChords, val, notation) => {
+
+   
+
+    txtChords = txtChords.toLowerCase()
     const chords = {
       anglo: {
-        C: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
-        "C#": ["C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C"],
-        Db: ["Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B", "C"],
-        D: ["C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C"]
+        c: [
+          "c",
+          "c#",
+          "d",
+          "d#",
+          "e",
+          "f",
+          "f#",
+          "g",
+          "g#",
+          "a",
+          "a#",
+          "b"
+        ],
+        "c#": [
+          "c#",
+          "d",
+          "d#",
+          "e",
+          "f",
+          "f#",
+          "g",
+          "g#",
+          "a",
+          "a#",
+          "b",
+          "c"
+        ],
+        db: [
+          "db",
+          "d",
+          "eb",
+          "e",
+          "f",
+          "gb",
+          "g",
+          "ab",
+          "a",
+          "bb",
+          "b",
+          "c"
+        ],
+        d: [
+          "d",
+          "d#",
+          "e",
+          "f",
+          "f#",
+          "g",
+          "g#",
+          "a",
+          "a#",
+          "b",
+          "c",
+          "c#"
+        ],
+        "d#": [
+          "d#",
+          "e",
+          "f",
+          "f#",
+          "g",
+          "g#",
+          "a",
+          "a#",
+          "b",
+          "c",
+          "c#",
+          "d"
+        ],
+        eb: [
+          "eb",
+          "e",
+          "f",
+          "gb",
+          "g",
+          "ab",
+          "a",
+          "bb",
+          "b",
+          "c",
+          "db",
+          "d"
+        ],
+        e: [
+          "e",
+          "f",
+          "f#",
+          "g",
+          "g#",
+          "a",
+          "a#",
+          "b",
+          "c",
+          "c#",
+          "d",
+          "d#"
+        ],
+        f: [
+          "f",
+          "f#",
+          "g",
+          "g#",
+          "a",
+          "a#",
+          "b",
+          "c",
+          "c#",
+          "d",
+          "d#",
+          "e"
+        ],
+        "f#": [
+          "f#",
+          "g",
+          "g#",
+          "a",
+          "a#",
+          "b",
+          "c",
+          "c#",
+          "d",
+          "d#",
+          "e",
+          "f"
+        ],
+        gb: [
+          "gb",
+          "g",
+          "ab",
+          "a",
+          "bb",
+          "b",
+          "c",
+          "db",
+          "d",
+          "eb",
+          "e",
+          "f"
+        ],
+        g: [
+          "g",
+          "g#",
+          "a",
+          "a#",
+          "b",
+          "c",
+          "c#",
+          "d",
+          "d#",
+          "e",
+          "f",
+          "f#"
+        ],
+        "g#": [
+          "g#",
+          "a",
+          "a#",
+          "b",
+          "c",
+          "c#",
+          "d",
+          "d#",
+          "e",
+          "f",
+          "f#",
+          "g"
+        ],
+        ab: [
+          "ab",
+          "a",
+          "bb",
+          "b",
+          "c",
+          "db",
+          "d",
+          "eb",
+          "e",
+          "f",
+          "gb",
+          "g"
+        ],
+        a: [
+          "a",
+          "a#",
+          "b",
+          "c",
+          "c#",
+          "d",
+          "d#",
+          "e",
+          "f",
+          "f#",
+          "g",
+          "g#"
+        ],
+        "a#": [
+          "a#",
+          "b",
+          "c",
+          "c#",
+          "d",
+          "d#",
+          "e",
+          "f",
+          "f#",
+          "g",
+          "g#",
+          "a"
+        ],
+        bb: [
+          "bb",
+          "b",
+          "c",
+          "db",
+          "d",
+          "eb",
+          "e",
+          "f",
+          "gb",
+          "g",
+          "ab",
+          "a"
+        ],
+        b: [
+          "b",
+          "c",
+          "c#",
+          "d",
+          "d#",
+          "e",
+          "f",
+          "f#",
+          "g",
+          "g#",
+          "a",
+          "a#"
+        ]
       },
       latin: {
-        Do: [
-          "Do",
-          "Do#",
-          "Re",
-          "Re#",
-          "Mi",
-          "Fa",
-          "Fa#",
-          "Sol",
-          "Sol#",
-          "La",
-          "La#",
-          "Si"
+        do: [
+          "do",
+          "do#",
+          "re",
+          "re#",
+          "mi",
+          "fa",
+          "fa#",
+          "sol",
+          "sol#",
+          "la",
+          "la#",
+          "si"
         ],
-        "Do#": [
-          "Do#",
-          "Re",
-          "Re#",
-          "Mi",
-          "Fa",
-          "Fa#",
-          "Sol",
-          "Sol#",
-          "La",
-          "La#",
-          "Si",
-          "Do"
+        "do#": [
+          "do#",
+          "re",
+          "re#",
+          "mi",
+          "fa",
+          "fa#",
+          "sol",
+          "sol#",
+          "la",
+          "la#",
+          "si",
+          "do"
         ],
-        Reb: [
-          "Reb",
-          "Re",
-          "Mib",
-          "Mi",
-          "Fa",
-          "Solb",
-          "Sol",
-          "Lab",
-          "La",
-          "Sib",
-          "Si",
-          "Do"
+        reb: [
+          "reb",
+          "re",
+          "mib",
+          "mi",
+          "fa",
+          "solb",
+          "sol",
+          "lab",
+          "la",
+          "sib",
+          "si",
+          "do"
         ],
-        Re: [
-          "Re",
-          "Re#",
-          "Mi",
-          "Fa",
-          "Fa#",
-          "Sol",
-          "Sol#",
-          "La",
-          "La#",
-          "Si",
-          "Do",
-          "Do#"
+        re: [
+          "re",
+          "re#",
+          "mi",
+          "fa",
+          "fa#",
+          "sol",
+          "sol#",
+          "la",
+          "la#",
+          "si",
+          "do",
+          "do#"
         ],
-        "Re#": [
-          "Re#",
-          "Mi",
-          "Fa",
-          "Fa#",
-          "Sol",
-          "Sol#",
-          "La",
-          "La#",
-          "Si",
-          "Do",
-          "Do#",
-          "Re"
+        "re#": [
+          "re#",
+          "mi",
+          "fa",
+          "fa#",
+          "sol",
+          "sol#",
+          "la",
+          "la#",
+          "si",
+          "do",
+          "do#",
+          "re"
         ],
-        Mib: [
-          "Mib",
-          "Mi",
-          "Fa",
-          "Solb",
-          "Sol",
-          "Lab",
-          "La",
-          "Sib",
-          "Si",
-          "Do",
-          "Reb",
-          "Re"
+        mib: [
+          "mib",
+          "mi",
+          "fa",
+          "solb",
+          "sol",
+          "lab",
+          "la",
+          "sib",
+          "si",
+          "do",
+          "reb",
+          "re"
         ],
-        Mi: [
-          "Mi",
-          "Fa",
-          "Fa#",
-          "Sol",
-          "Sol#",
-          "La",
-          "La#",
-          "Si",
-          "Do",
-          "Do#",
-          "Re",
-          "Re#"
+        mi: [
+          "mi",
+          "fa",
+          "fa#",
+          "sol",
+          "sol#",
+          "la",
+          "la#",
+          "si",
+          "do",
+          "do#",
+          "re",
+          "re#"
         ],
-        Fa: [
-          "Fa",
-          "Fa#",
-          "Sol",
-          "Sol#",
-          "La",
-          "La#",
-          "Si",
-          "Do",
-          "Do#",
-          "Re",
-          "Re#",
-          "Mi"
+        fa: [
+          "fa",
+          "fa#",
+          "sol",
+          "sol#",
+          "la",
+          "la#",
+          "si",
+          "do",
+          "do#",
+          "re",
+          "re#",
+          "mi"
         ],
-        "Fa#": [
-          "Fa#",
-          "Sol",
-          "Sol#",
-          "La",
-          "La#",
-          "Si",
-          "Do",
-          "Do#",
-          "Re",
-          "Re#",
-          "Mi",
-          "Fa"
+        "fa#": [
+          "fa#",
+          "sol",
+          "sol#",
+          "la",
+          "la#",
+          "si",
+          "do",
+          "do#",
+          "re",
+          "re#",
+          "mi",
+          "fa"
         ],
-        Solb: [
-          "Solb",
-          "Sol",
-          "Lab",
-          "La",
-          "Sib",
-          "Si",
-          "Do",
-          "Reb",
-          "Re",
-          "Mib",
-          "Mi",
-          "Fa"
+        solb: [
+          "solb",
+          "sol",
+          "lab",
+          "la",
+          "sib",
+          "si",
+          "do",
+          "reb",
+          "re",
+          "mib",
+          "mi",
+          "fa"
         ],
-        Sol: [
-          "Sol",
-          "Sol#",
-          "La",
-          "La#",
-          "Si",
-          "Do",
-          "Do#",
-          "Re",
-          "Re#",
-          "Mi",
-          "Fa",
-          "Fa#"
+        sol: [
+          "sol",
+          "sol#",
+          "la",
+          "la#",
+          "si",
+          "do",
+          "do#",
+          "re",
+          "re#",
+          "mi",
+          "fa",
+          "fa#"
         ],
-        "Sol#": [
-          "Sol#",
-          "La",
-          "La#",
-          "Si",
-          "Do",
-          "Do#",
-          "Re",
-          "Re#",
-          "Mi",
-          "Fa",
-          "Fa#",
-          "Sol"
+        "sol#": [
+          "sol#",
+          "la",
+          "la#",
+          "si",
+          "do",
+          "do#",
+          "re",
+          "re#",
+          "mi",
+          "fa",
+          "fa#",
+          "sol"
         ],
-        Lab: [
-          "Lab",
-          "La",
-          "Sib",
-          "Si",
-          "Do",
-          "Reb",
-          "Re",
-          "Mib",
-          "Mi",
-          "Fa",
-          "Solb",
-          "Sol"
+        lab: [
+          "lab",
+          "la",
+          "sib",
+          "si",
+          "do",
+          "reb",
+          "re",
+          "mib",
+          "mi",
+          "fa",
+          "solb",
+          "sol"
         ],
-        La: [
-          "La",
-          "La#",
-          "Si",
-          "Do",
-          "Do#",
-          "Re",
-          "Re#",
-          "Mi",
-          "Fa",
-          "Fa#",
-          "Sol",
-          "Sol#"
+        la: [
+          "la",
+          "la#",
+          "si",
+          "do",
+          "do#",
+          "re",
+          "re#",
+          "mi",
+          "fa",
+          "fa#",
+          "sol",
+          "sol#"
         ],
-        "La#": [
-          "La#",
-          "Si",
-          "Do",
-          "Do#",
-          "Re",
-          "Re#",
-          "Mi",
-          "Fa",
-          "Fa#",
-          "Sol",
-          "Sol#",
-          "La"
+        "la#": [
+          "la#",
+          "si",
+          "do",
+          "do#",
+          "re",
+          "re#",
+          "mi",
+          "fa",
+          "fa#",
+          "sol",
+          "sol#",
+          "la"
         ],
-        Sib: [
-          "Sib",
-          "Si",
-          "Do",
-          "Reb",
-          "Re",
-          "Mib",
-          "Mi",
-          "Fa",
-          "Solb",
-          "Sol",
-          "Lab",
-          "La"
+        sib: [
+          "sib",
+          "si",
+          "do",
+          "reb",
+          "re",
+          "mib",
+          "mi",
+          "fa",
+          "solb",
+          "sol",
+          "lab",
+          "la"
         ],
-        Si: [
-          "Si",
-          "Do",
-          "Do#",
-          "Re",
-          "Re#",
-          "Mi",
-          "Fa",
-          "Fa#",
-          "Sol",
-          "Sol#",
-          "La",
-          "La#"
+        si: [
+          "si",
+          "do",
+          "do#",
+          "re",
+          "re#",
+          "mi",
+          "fa",
+          "fa#",
+          "sol",
+          "sol#",
+          "la",
+          "la#"
         ]
       }
     };
 
     let configChords = chords[Vue.prototype.$config.notation];
 
-    const extensions = ["m", "m7", "7", "dim", "sus4", "sus9", "9", "11", "13"];
+
+
+    const extensions = ["m ", "m7", "7", "dim", "sus4", "sus9", "9", "11", "13"];
+
+
+
+    const chordTranslate = {
+      anglo: {
+        do: 'c',
+        'do#': 'c#',
+        'reb': 'db',
+        re: 'd',
+        're#': 'd#',
+        mib: 'eb',
+        mi: 'e',
+        fa: 'f',
+        'fa#': 'f#',
+        solb: 'gb',
+        sol: 'g',
+        'sol#': 'g#',
+        lab: 'ab',
+        la: 'a',
+        'la#': 'a#',
+        sib: 'bb',
+        si: 'b',
+      }
+    }
 
     const lines = txtChords.split("\n");
     let newline = "";
@@ -286,26 +554,52 @@ export const ws_helpers = {
           const chordParts = fullChord.split("/");
 
           chordParts.forEach((chordPart, index) => {
-            let chordExtension = false;
-            let chord;
-            let newChord;
 
+            if (notation !== Vue.prototype.$config.notation) {
+              let chord = chordPart
+          
+
+            }
+
+            let found = false
+            let newChord;
+            let extension
+
+            Object.keys(configChords).forEach(chord => {
+
+              if (chordPart.indexOf(chord) !== -1 && found === false) {
+
+                extension = chordPart.replace(chord, "")
+
+                newChord = configChords[chord][val] + extension;
+                newChord = newChord.charAt(0).toUpperCase() + newChord.slice(1)
+               // console.log(newChord)
+                newChord = newChord.replace("##", "#")
+                newline += newChord;
+                found = true
+              }
+            })
+
+            /*
             extensions.forEach(extension => {
               if (chordPart.indexOf(extension) !== -1) {
                 chord = chordPart.replace(extension, "");
-                //console.log(chord)
+            
                 newChord = configChords[chord][val] + extension;
-
+                newChord = newChord.charAt(0).toUpperCase() + newChord.slice(1)
                 newline += newChord;
                 chordExtension = true;
               }
             });
+           
             // console.log(chordPart);
 
             if (chordExtension === false) {
               newChord = configChords[chordPart][val];
+              newChord = newChord.charAt(0).toUpperCase() + newChord.slice(1)
               newline += newChord;
             }
+             */
             if (chordParts.length > 1 && index === 0) {
               newline += "/";
             }
@@ -329,6 +623,9 @@ export const ws_helpers = {
           console.log("Network is Disabled");
 
           Vue.prototype.$bus.$emit("loading-false");
+          
+
+
           res(songs);
         });
       });
@@ -347,20 +644,34 @@ export const ws_helpers = {
         .get()
         .then(snapshot => {
           let songs = [];
+          let songList = [];
           snapshot.docs.forEach(song => {
             let songdata = song.data();
             songdata.searchref = songdata.title;
             songdata.songid = song.id;
+
+            
+
+
+
             songdata.columns.forEach(column => {
               column.sections.forEach(section => {
                 songdata.searchref += section.text;
               });
             });
+            songList.push({
+              id: songdata.songid,
+              title: songdata.title,
+              searchref: songdata.searchref
+            })
             songs.push(songdata);
           });
           Vue.prototype.$store.dispatch(
             "defaultModule/setSongs",
-            JSON.stringify(songs)
+            {
+              songs:JSON.stringify(songs),
+              songList:JSON.stringify(songList)
+            }
           );
           res(songs);
         });
@@ -374,7 +685,7 @@ export const ws_helpers = {
       }
     });
   },
- 
+
   getAnnounces() {
     return new Promise((res, rej) => {
       let organizationID =
@@ -396,10 +707,11 @@ export const ws_helpers = {
     });
   },
   filterSongs(str) {
+    
     return new Promise((res, rej) => {
       let songs = Vue.prototype.$store.getters["defaultModule/getSongs"];
       if (str.length >= 3) {
-      
+
 
         let obj = songs.filter(o =>
           o.searchref.toLowerCase().includes(str.toLowerCase())
@@ -413,7 +725,7 @@ export const ws_helpers = {
         });
 
         res(sng);
-      } 
+      }
     });
   },
   syncronization() {
@@ -423,7 +735,9 @@ export const ws_helpers = {
           organizationID: Vue.prototype.$loginInfo.organizationID,
           userEmail: Vue.prototype.$loginInfo.email
         })
-        .then(({ data }) => {
+        .then(({
+          data
+        }) => {
           resolve(data);
         })
         .catch(err => {
@@ -440,7 +754,9 @@ export const ws_helpers = {
       Vue.prototype.$firestore
         .collection("songs")
         .doc(songID)
-        .update({ deleted: true });
+        .update({
+          deleted: true
+        });
       let songs = Vue.prototype.$store.getters["defaultModule/getSongs"];
       let reduced = [];
       songs.forEach(song => {
@@ -498,12 +814,28 @@ export const ws_helpers = {
   },
 
   checkInternetConnection() {
-    let serverAddress =
-      Vue.prototype.$store.getters["defaultModule/serverAddress"];
+
     return new Promise((res, rej) => {
       axios
         .get("http://localhost:7777/api/checkConnection")
-        .then(({ data }) => {
+        .then(({
+          data
+        }) => {
+          res(data.internet);
+        })
+        .catch(error => {
+          res("offline");
+        });
+    });
+  },
+  loadFile() {
+
+    return new Promise((res, rej) => {
+      axios
+        .get("http://localhost:7777/file/test.mp4")
+        .then(({
+          data
+        }) => {
           res(data.internet);
         })
         .catch(error => {
@@ -521,7 +853,7 @@ export const ws_helpers = {
     var pc = new myPeerConnection({
         iceServers: []
       }),
-      noop = function() {},
+      noop = function () {},
       localIPs = {},
       ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/g,
       key;
@@ -535,8 +867,8 @@ export const ws_helpers = {
     pc.createDataChannel("");
 
     // create offer and set local description
-    pc.createOffer(function(sdp) {
-      sdp.sdp.split("\n").forEach(function(line) {
+    pc.createOffer(function (sdp) {
+      sdp.sdp.split("\n").forEach(function (line) {
         if (line.indexOf("candidate") < 0) return;
         line.match(ipRegex).forEach(iterateIP);
       });
@@ -545,7 +877,7 @@ export const ws_helpers = {
     }, noop);
 
     //listen for candidate events
-    pc.onicecandidate = function(ice) {
+    pc.onicecandidate = function (ice) {
       if (
         !ice ||
         !ice.candidate ||
@@ -560,10 +892,10 @@ export const ws_helpers = {
     Vue.prototype.$renderer.send("update-playlist", playlist);
   },
   addToPlaylist(songid) {
-      Vue.prototype.$renderer.send('add-to-playlist', songid)
+    Vue.prototype.$renderer.send('add-to-playlist', songid)
   },
   removeFromPlaylist(index) {
-  
+
     Vue.prototype.$renderer.send('remove-from-playlist', index)
   },
   savePlaylist(playlist, title) {
@@ -573,8 +905,7 @@ export const ws_helpers = {
       id: playlist.id,
       createdBy: Vue.prototype.$store.getters["defaultModule/getDisplayName"],
       createdByEmail: Vue.prototype.$store.getters["defaultModule/getEmail"],
-      organizationID:
-        Vue.prototype.$store.getters["defaultModule/getOrganizationID"]
+      organizationID: Vue.prototype.$store.getters["defaultModule/getOrganizationID"]
     };
 
     return new Promise((res, rej) => {
@@ -660,11 +991,10 @@ export const ws_helpers = {
       icon: "fas fa-question",
       textColor: "white",
       position: "center",
-      actions: [
-        {
+      actions: [{
           label: "Yes",
           color: "yellow",
-          handler: () =>  Vue.prototype.$renderer.send("update-playlist", playlist)
+          handler: () => Vue.prototype.$renderer.send("update-playlist", playlist)
         },
         {
           label: "Dismiss",
@@ -682,8 +1012,8 @@ export const ws_helpers = {
   appMinimize() {
     Vue.prototype.$renderer.send("app-minimize");
   },
-  clearStorage(){
-    return new Promise((res, rej)=>{
+  clearStorage() {
+    return new Promise((res, rej) => {
       localStorage.removeItem("licenseName");
       localStorage.removeItem("licenseEmail");
       localStorage.removeItem("licenseType");
@@ -703,6 +1033,117 @@ export const ws_helpers = {
       localStorage.removeItem("loggedIn");
       localStorage.removeItem("songs");
       res('ok')
-     })
+    })
+  },
+  versionControl() {
+    axios.get('https://www.simonpietro.it/worshipstudio/downloads/version.php').then(({
+      data
+    }) => {
+      const remote_version = data.version.split(".");
+      const local_version = Vue.prototype.$ver.split(".");
+      console.log("NEW UPDATE")
+      if (parseInt(remote_version[0]) > parseInt(local_version[0]) || parseInt(remote_version[1]) > parseInt(local_version[1]) || parseInt(remote_version[2]) > parseInt(local_version[2])) {
+        Vue.prototype.$bus.$emit('new-version', data)
+      }
+    })
+  },
+  downloadUpdate() {
+    axios({
+      url: 'https://www.simonpietro.it/worshipstudio/downloads/WorshipStudio.exe',
+      method: 'GET',
+      responseType: 'blob', // important
+    }).then((response) => {
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'WorshipStudio.exe');
+      document.body.appendChild(link);
+      link.click();
+    });
+  },
+
+  getSlideBackround(songId, index) {
+
+    let songsLocalSettings = JSON.parse(localStorage.getItem('songsLocalSettings')) || {};
+
+    if (songsLocalSettings[songId] !== undefined &&
+      songsLocalSettings[songId]['slides'][index] !== undefined &&
+      songsLocalSettings[songId]['slides'][index]['background'] !== undefined
+    ) {
+      let background = songsLocalSettings[songId]['slides'][index]['background']
+      if (background.backgroundType === 'image') {
+        let path = songsLocalSettings[songId]['slides'][index]['background'].imagePath
+        path = path.replace(/\\/g, "/")
+        console.log("path", path)
+        return {
+          'background-image': 'url(file://' + path + ')',
+          'background-size': 'cover'
+
+        }
+      }
+      if (background.backgroundType === 'color') {
+        let bgcolor = songsLocalSettings[songId]['slides'][index]['background'].backgroundColor
+        return {
+          'background-color': bgcolor,
+        }
+      }
+    } else {
+      return null
+    }
+  },
+  getSlideBackgroundInfo(songId, index) {
+    let songsLocalSettings = JSON.parse(localStorage.getItem('songsLocalSettings')) || {};
+
+    if (songsLocalSettings[songId] !== undefined &&
+      songsLocalSettings[songId]['slides'][index] !== undefined &&
+      songsLocalSettings[songId]['slides'][index]['background'] !== undefined
+    ) {
+
+
+      let background = songsLocalSettings[songId]['slides'][index]['background']
+      if (background.backgroundType === 'image' || background.backgroundType === 'video') {
+        let path = songsLocalSettings[songId]['slides'][index]['background'].imagePath
+        path = path.replace(/\\/g, "/")
+
+        return {
+          backgroundType: background.backgroundType,
+          filePath: 'file:///' + path
+        }
+      } else {
+        return {
+          backgroundType: '',
+          filePath: ''
+        }
+      }
+    } else {
+      return {
+        backgroundType: '',
+        filePath: ''
+      }
+    }
+  },
+
+  getSlideTextColor(songId, index) {
+    let songsLocalSettings = JSON.parse(localStorage.getItem('songsLocalSettings')) || {};
+
+
+
+    if (songsLocalSettings[songId] !== undefined &&
+      songsLocalSettings[songId]['slides'][index] !== undefined
+    ) {
+
+
+      let textColor = songsLocalSettings[songId]['slides'][index].textColor
+      console.log("TEXTCOLOR")
+      return {
+        'color': textColor,
+      }
+
+
+    } else {
+      return {
+        'color': 'white'
+      }
+    }
   }
 };
