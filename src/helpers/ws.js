@@ -516,7 +516,7 @@ export const ws_helpers = {
 
 
 
-    const extensions = ["m ", "m7", "7", "dim", "sus4", "sus9", "9", "11", "13"];
+    const extensions = ["m", "m7", "7", "dim", "sus4", "sus9", "9", "11", "13"];
 
 
 
@@ -549,29 +549,30 @@ export const ws_helpers = {
 
       chords.forEach(fullChord => {
         if (fullChord === "") {
-          newline += " ";
+          newline += "\xa0";
         } else {
           const chordParts = fullChord.split("/");
 
           chordParts.forEach((chordPart, index) => {
-
+           
             if (notation !== Vue.prototype.$config.notation) {
               let chord = chordPart
-          
-
+        
             }
-
+        
             let found = false
             let newChord;
             let extension
-
+            let chordExtension = false
+            /*
             Object.keys(configChords).forEach(chord => {
-
+               
               if (chordPart.indexOf(chord) !== -1 && found === false) {
-
+               
                 extension = chordPart.replace(chord, "")
-
+         
                 newChord = configChords[chord][val] + extension;
+                console.log("NEWCHORD", newChord)
                 newChord = newChord.charAt(0).toUpperCase() + newChord.slice(1)
                // console.log(newChord)
                 newChord = newChord.replace("##", "#")
@@ -579,30 +580,37 @@ export const ws_helpers = {
                 found = true
               }
             })
-
-            /*
+*/
+     
             extensions.forEach(extension => {
-              if (chordPart.indexOf(extension) !== -1) {
-                chord = chordPart.replace(extension, "");
-            
+              let chord
+    
+              if (chordPart.slice(chordPart.length-1).indexOf(extension) !== -1 &&  chordExtension===false) {
+                chord = chordPart.substring(0, chordPart.length-1)
+           
+     
+                
                 newChord = configChords[chord][val] + extension;
                 newChord = newChord.charAt(0).toUpperCase() + newChord.slice(1)
+   
                 newline += newChord;
                 chordExtension = true;
+      
               }
             });
            
-            // console.log(chordPart);
-
+            
+              
             if (chordExtension === false) {
               newChord = configChords[chordPart][val];
               newChord = newChord.charAt(0).toUpperCase() + newChord.slice(1)
               newline += newChord;
             }
-             */
+            
             if (chordParts.length > 1 && index === 0) {
               newline += "/";
             }
+            
           });
         }
       });
@@ -613,8 +621,11 @@ export const ws_helpers = {
     return newline;
   },
   loadAllSongs() {
-    Vue.prototype.$bus.$emit("loading-true");
-    console.log("Loading Songs from server");
+    Vue.prototype.$bus.$emit("loading",true);
+    Vue.prototype.$bus.$emit("status",{
+      message:"Synchronization...",
+      color: "yellow"
+    });
     return new Promise((res, rej) => {
       Vue.prototype.$firestore.enableNetwork().then(() => {
         console.log("Network is Enabled");
@@ -622,9 +633,12 @@ export const ws_helpers = {
           Vue.prototype.$firestore.disableNetwork();
           console.log("Network is Disabled");
 
-          Vue.prototype.$bus.$emit("loading-false");
+          Vue.prototype.$bus.$emit("loading",false);
           
-
+          Vue.prototype.$bus.$emit("status",{
+            message:"Synchronization Completed!",
+            color: "grey"
+          });
 
           res(songs);
         });
@@ -634,6 +648,10 @@ export const ws_helpers = {
   allSongs() {
     return new Promise((res, rej) => {
       console.log("Loading Songs");
+      Vue.prototype.$bus.$emit("status",{
+        message:"Loading Songs...",
+        color: "yellow"
+      });
       let organizationID =
         Vue.prototype.$store.getters["defaultModule/getOrganizationID"];
       Vue.prototype.$firestore
@@ -643,36 +661,47 @@ export const ws_helpers = {
         .orderBy("title")
         .get()
         .then(snapshot => {
-          let songs = [];
+          let songs = {};
           let songList = [];
+          let test = []
           snapshot.docs.forEach(song => {
+          
+            let sections= []
+          //  let partPosition = [[]]
+
             let songdata = song.data();
+          //  console.log(songdata)
             songdata.searchref = songdata.title;
             songdata.songid = song.id;
-
-            
-
-
-
+            /*
             songdata.columns.forEach(column => {
-              column.sections.forEach(section => {
+              column.sections.forEach((section,index) => {
+               // partPosition[0].push(index)
                 songdata.searchref += section.text;
               });
             });
+           // console.log(partPosition)
+          /*
+            Vue.prototype.$firestore
+            .collection("songs").doc(song.id).set({
+              partPosition: partPosition
+            }, { merge: true })
+            console.log(sections)
+            */
             songList.push({
               id: songdata.songid,
               title: songdata.title,
               searchref: songdata.searchref
             })
-            songs.push(songdata);
+            songs[songdata.songid] = songdata;
           });
-          Vue.prototype.$store.dispatch(
-            "defaultModule/setSongs",
-            {
-              songs:JSON.stringify(songs),
-              songList:JSON.stringify(songList)
-            }
-          );
+         
+        //  Vue.prototype.$store.dispatch("defaultModule/setSongs",JSON.stringify(songs));
+         // Vue.prototype.$store.dispatch("defaultModule/setSongList",JSON.stringify(songList));
+         Vue.prototype.$bus.$emit("status",{
+          message:"Loading Complete",
+          color: "grey"
+        });
           res(songs);
         });
     });
@@ -709,7 +738,7 @@ export const ws_helpers = {
   filterSongs(str) {
     
     return new Promise((res, rej) => {
-      let songs = Vue.prototype.$store.getters["defaultModule/getSongs"];
+      let songs = Vue.prototype.$store.getters["defaultModule/getSongList"];
       if (str.length >= 3) {
 
 
@@ -723,7 +752,7 @@ export const ws_helpers = {
         const uniquesongs = Array.from(new Set(sng.map(a => a.id))).map(id => {
           return sng.find(a => a.id === id);
         });
-
+      
         res(sng);
       }
     });
@@ -754,22 +783,19 @@ export const ws_helpers = {
       Vue.prototype.$firestore
         .collection("songs")
         .doc(songID)
-        .update({
-          deleted: true
+        .delete().then(function() {
+          Vue.prototype.$bus.$emit("status",{
+            message:"Song Deleted!",
+            color: "grey"
+          });
+         
+      }).catch(function(error) {
+        Vue.prototype.$bus.$emit("status",{
+          message:"Error deleting song!",
+          color: "grey"
         });
-      let songs = Vue.prototype.$store.getters["defaultModule/getSongs"];
-      let reduced = [];
-      songs.forEach(song => {
-        if (song.songid !== songID) {
-          reduced.push(song);
-        }
       });
-
-      Vue.prototype.$store.dispatch(
-        "defaultModule/setSongs",
-        JSON.stringify(reduced)
-      );
-      res(reduced);
+      res("ok")
     });
   },
   checkLicense(licenseKey) {

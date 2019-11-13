@@ -82,6 +82,13 @@ const routes = [
     ]
   },
   {
+    path: '/Chords',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', component: () => import('pages/Chords.vue') }
+    ]
+  },
+  {
     path: '/RenewLicense',
     component: () => import('layouts/Blank.vue'),
     children: [

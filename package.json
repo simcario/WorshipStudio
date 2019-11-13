@@ -44,7 +44,8 @@
     "vue-video-section": "^1.0.2",
     "vue2-animate": "^2.1.2",
     "vuedraggable": "^2.23.1",
-    "vuexfire": "^3.1.2"
+    "vuexfire": "^3.1.2",
+    "wavesurfer.js": "^3.2.0"
   },
   "devDependencies": {
     "@quasar/app": "^1.0.0",

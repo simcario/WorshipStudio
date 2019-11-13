@@ -8,7 +8,7 @@
         v-if="visible"
         class="text"
         :style="{'align-self':template.valign, 'background-color':template.textBackground,color:template.textColor, 'text-shadow':'2px 2px 2px black', border:'1px solid ' + template.textBoxColor}"
-        v-resize-text="{ratio:'1.5', minFontSize:'40px', maxFontSize:'100px', delay:200, }"
+        v-resize-text="{ratio:'1.8', minFontSize:'40px', maxFontSize:'70px', delay:200, }"
       >{{text}}</div>
     </transition>
     <div class="background-container" :style="{'background-image':'url('+template.filePath+')'}">
@@ -156,7 +156,7 @@ T'was blind but now I see`.toUpperCase(),
 
 .text {
   width: 100%;
-  line-height: 120px;
+  line-height: 120%;
   font-weight: bolder;
   text-align: center;
   white-space: pre-line;

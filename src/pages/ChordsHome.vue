@@ -232,10 +232,11 @@ export default {
       this.loading = false;
     });
 
+    /*
     this.$ws.loadAllSongs().then(songs => {
       this.songs = songs;
     });
-
+  */
     this.$renderer.send("get-playlist");
 
     this.$renderer.on("playlist-data", (evt, playlist) => {

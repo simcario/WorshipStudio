@@ -227,7 +227,7 @@ var secret = "W0rsh1pstudi0";
 
 var simpleCrypto = new SimpleCrypto(secret);
 var string =
-  "valid|Chiesa Evangelica della Riconciliazione CZ|scarioti@gmail.com|studio|ChordsHome|2019-12-31";
+  "valid|Chiesa Evangelica della Riconciliazione CZ|scarioti@gmail.com|studio|Chords|2019-12-31";
 var chiperText = simpleCrypto.encrypt(string);
 var decrypted = simpleCrypto.decrypt(chiperText);
 console.log(chiperText);

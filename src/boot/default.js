@@ -66,9 +66,12 @@ export default ({
   Vue.prototype.$bus = new Vue()
   Vue.prototype.$ver = "1.0.3"
 
+ 
+    
+
   const pcName = store.getters["defaultModule/getComputerName"]
 
-
+  ws_helpers.loadAllSongs()
 
   ipcRenderer.on('newPeer', (event, peerName) => {
     Notify.create({

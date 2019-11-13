@@ -70,9 +70,8 @@
                       toggle-color="primary"
                       size="sm"
                       :options="[
-                      {label: 'Chords', value: 'ChordsHome'},
-                      {label: 'Lyrics', value: 'LyricsHome'},
-                      {label: 'Slides', value: 'SlidesHome'}
+                      {label: 'Chords', value: 'Chords'},
+                      {label: 'Slides', value: 'Slides'}
                     ]"
                     />
                   </div>

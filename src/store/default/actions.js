@@ -196,9 +196,15 @@ export function licenseExpired(context, expired) {
 
 export function setSongs(context, songs) {
   return new Promise((res, rej) => {
-    localStorage.setItem("songs", songs.songs);
-    localStorage.setItem("songsList", songs.songList);
+    localStorage.setItem("songs", songs);
     context.commit("retrieveSongs", songs);
+    res("OK");
+  });
+}
+export function setSongList(context, songList) {
+  return new Promise((res, rej) => {
+    localStorage.setItem("songsList", songList);
+    context.commit("retrieveSongList", songList);
     res("OK");
   });
 }
@@ -252,6 +258,45 @@ export function setSongTemplate(context, songInfo) {
       songsLocalSettings[songInfo.songID]['slides'][songInfo.slideIndex] = {}
     }
     songsLocalSettings[songInfo.songID]['slides'][songInfo.slideIndex]['template'] = songInfo.template
+    localStorage.setItem("songsLocalSettings", JSON.stringify(songsLocalSettings));
+    context.commit("retrieveSongsLocalSettings", songsLocalSettings);
+    res("OK");
+  })
+}
+
+export function setSongPartPosition(context, songInfo) {
+  return new Promise(res => {
+    let songsLocalSettings = JSON.parse(localStorage.getItem('songsLocalSettings')) || {};
+
+    if (songsLocalSettings[songInfo.songID] === undefined) {
+      songsLocalSettings[songInfo.songID] = {}
+    }
+    if (songsLocalSettings[songInfo.songID]['partPosition'] === undefined) {
+      songsLocalSettings[songInfo.songID]['partPosition'] = songInfo.partPosition
+    } else {
+      songsLocalSettings[songInfo.songID]['partPosition'] = songInfo.partPosition
+    }
+   
+
+    localStorage.setItem("songsLocalSettings", JSON.stringify(songsLocalSettings));
+    context.commit("retrieveSongsLocalSettings", songsLocalSettings);
+    res("OK");
+  })
+}
+
+export function setSongTextStyle(context, songInfo) {
+  return new Promise(res => {
+    let songsLocalSettings = JSON.parse(localStorage.getItem('songsLocalSettings')) || {};
+
+    if (songsLocalSettings[songInfo.songID] === undefined) {
+      songsLocalSettings[songInfo.songID] = {}
+    }
+    if (songsLocalSettings[songInfo.songID]['textStyle'] === undefined) {
+      songsLocalSettings[songInfo.songID]['textStyle'] = songInfo.textStyle
+    } else {
+      songsLocalSettings[songInfo.songID]['textStyle'] = songInfo.textStyle
+    }
+    console.log(songsLocalSettings)
     localStorage.setItem("songsLocalSettings", JSON.stringify(songsLocalSettings));
     context.commit("retrieveSongsLocalSettings", songsLocalSettings);
     res("OK");

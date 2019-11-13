@@ -3,11 +3,11 @@
     v-model="show"
     persistent
     :maximized="true"
-    transition-show="slide-up"
-    transition-hide="slide-down"
+    transition-show="fade"
+    transition-hide="fade"
   >
     <q-card>
-      <q-bar dark class="bg-primary text-white">
+      <q-bar dark class="bg-grey glossy text-white">
         {{song.title}}
         <q-space />
         <q-btn dense flat icon="close" @click="closeDialog()">
@@ -20,22 +20,36 @@
           <div
             class="col"
             style="padding-left:20px; "
-            v-for="(column,index) in song.columns"
+            v-for="(column,index) in partPosition"
             :key="index"
           >
-            <div v-for="(section, i) in column.sections" :key="i" class="sectionContainer">
-              <nl2br
-                v-if="section !== undefined"
-                tag="div"
-                :text="transposedChords(section.chords)"
-                class-name="songChords"
-              />
-              <nl2br
-                v-if="section !== undefined"
-                tag="div"
-                :text="section.text"
-                :class-name="'songText ' + section.type"
-              />
+            <div v-for="(section, i) in column" :key="i" class="sectionContainer">
+              <div
+                :style="{
+                             'white-space': 'pre', 
+                            'color':textStyle.chordsColor, 
+                            'font-size': textStyle.size + 'px',
+                            'font-weight': textStyle.chordsWeight,
+                            'line-height': textStyle.size*2.2 + 'px',
+                            'position': 'absolute',
+                            }"
+                v-if="song.sections[section] !== undefined"
+                v-show="showChords"
+              >{{song.sections[section].chords}}</div>
+              <div
+                :style="{
+                              'white-space': 'pre', 
+                            'color':textStyle.textColor, 
+                            'font-size': textStyle.size + 'px',
+                              'font-weight': textStyle.textWeight,
+                            'padding-top': textStyle.size + 'px',
+                            'line-height': textStyle.size*2.2 + 'px',
+ 
+ 
+                            }"
+                v-if="song.sections[section] !== undefined"
+                editable="true"
+              >{{song.sections[section].text}}</div>
             </div>
           </div>
         </div>
@@ -51,22 +65,22 @@ export default {
   props: {
     show: {
       required: true
+    },
+    showChords: {
+      default: true
     }
   },
   mounted() {
-  
-    this.$renderer.on("song",(event,song)=>{
-      console.log(song)
-      this.song = song
-    })
-
-    this.$renderer.on("left", (evt) => {
-      this.transpose--
-     
+    this.$renderer.on("song", (event, song) => {
+      console.log(song);
+      this.song = song;
     });
-    this.$renderer.on("right", (evt) => {
-      this.transpose++
-        
+
+    this.$renderer.on("left", evt => {
+      this.transpose--;
+    });
+    this.$renderer.on("right", evt => {
+      this.transpose++;
     });
   },
   data() {
@@ -95,22 +109,53 @@ export default {
     }
   },
   computed: {
+    partPosition() {
+      let localSettings = this.$store.getters[
+        "defaultModule/getSongsLocalSettings"
+      ];
+
+      if (
+        localSettings[this.song.songid] !== undefined &&
+        localSettings[this.song.songid]["partPosition"] !== undefined
+      ) {
+        return localSettings[this.song.songid]["partPosition"];
+      } else {
+        let partPosition = [[]];
+        this.song.sections.forEach((section, index) => {
+          partPosition[0].push(index);
+        });
+        return partPosition;
+      }
+    },
     textStyle() {
-      return this.song.column[this.selectedColumn].sections[
-        this.selectedSection
-      ].chords;
+      let localSettings = this.$store.getters[
+        "defaultModule/getSongsLocalSettings"
+      ];
+      return localSettings[this.song.songid] !== undefined &&
+        localSettings[this.song.songid]["textStyle"] !== undefined
+        ? localSettings[this.song.songid]["textStyle"]
+        : {
+            size: 18,
+            chordsColor: "red",
+            textColor: "black",
+            textWeight: "normal",
+            chordsWeight: "bold"
+          };
+    },
+    lineHeight() {
+      return this.showChords == true ? 2.2 : 1.5;
     }
   },
-  watch:{
-    transpose(){
-       console.log("TRANSPOSE PRIMA",this.transpose)
-      if(this.transpose > 11){
+  watch: {
+    transpose() {
+      console.log("TRANSPOSE PRIMA", this.transpose);
+      if (this.transpose > 11) {
         this.transpose = 0;
       }
-      if(this.transpose === -1){
-        this.transpose = 11 
+      if (this.transpose === -1) {
+        this.transpose = 11;
       }
-       console.log("TRANSPOSE DOPO",this.transpose)
+      console.log("TRANSPOSE DOPO", this.transpose);
     }
   }
 };

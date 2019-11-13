@@ -61,7 +61,7 @@
                 </q-item-section>
                 <q-item-section>Slides</q-item-section>
               </q-item>
-              <q-item clickable @click="$router.push({path:'/Slides'})">
+              <q-item clickable @click="$router.push({path:'/Chords'})">
                 <q-item-section avatar style="min-width: 16px;">
                   <q-icon name="slideshow" size="12px" />
                 </q-item-section>
