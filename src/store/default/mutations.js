@@ -81,3 +81,7 @@ export function retrieveSongsLocalSettings (state, settings){
 export function retrieveSlideTemplates (state, templates){
     state.slideTemplates = templates
 }
+
+export function retrievePadLibrary (state, library){
+    state.padLibrary = library
+}

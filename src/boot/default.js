@@ -22,6 +22,8 @@ import {
 } from "../helpers/ws.js";
 import db from "../helpers/firebase"
 
+import wavesurfer from 'wavesurfer.js'
+
 // TODO: from localstorage
 const config = {
   language: "en", //TODO
@@ -53,7 +55,6 @@ export default ({
     email: store.getters["defaultModule/getEmail"],
     displayName: store.getters["defaultModule/getDisplayName"]
   };
-
   Vue.prototype.$loginInfo = loginInfo;
   Vue.prototype.$mode = "chords";
   Vue.prototype.$ws = ws_helpers;
@@ -62,6 +63,7 @@ export default ({
   Vue.prototype.$renderer = ipcRenderer;
   Vue.prototype.$firebase = db;
   Vue.prototype.$firestore = db.firestore();
+  Vue.prototype.$wavesurfer = wavesurfer;
   Vue.prototype.$peers = {}
   Vue.prototype.$bus = new Vue()
   Vue.prototype.$ver = "1.0.3"

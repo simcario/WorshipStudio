@@ -8,11 +8,12 @@
   >
     <q-card>
       <q-bar dark class="bg-primary text-white">
+        <div v-if="chordViewer===false">
         <div v-if="edit===false">New Song</div>
         <div v-else>Edit Song</div>
-        - {{title}}
+        - </div>{{title}}
         <q-space />
-        <q-btn dense flat icon="fas fa-save" @click="saveSong()">
+        <q-btn dense flat icon="fas fa-save" @click="saveSong()" v-if="chordViewer===false">
           <q-tooltip content-class="bg-white text-primary">Save</q-tooltip>
         </q-btn>
         <q-btn dense flat icon="close" @click="closeEditor(false)">
@@ -29,6 +30,7 @@
             :key="index"
           >
             <q-bar
+            v-if="chordViewer===false"
               dense
               dark
               class="text-white"
@@ -62,7 +64,7 @@
                   flat
                   round
                   size="xs"
-                  v-if="index + 1 < partPosition.length && sections.length > 1"
+                  v-if="index + 1 < partPosition.length && sections.length > 1 && chordViewer===false"
                   @click="moveSectionRight(index,section,i)"
                 >
                   <q-tooltip>Move Right</q-tooltip>
@@ -76,7 +78,7 @@
                   flat
                   round
                   size="xs"
-                  v-if="partPosition.length > 1 && index > 0"
+                  v-if="partPosition.length > 1 && index > 0 && chordViewer===false"
                   @click="moveSectionLeft(index,section,i)"
                 >
                   <q-tooltip>Move Left</q-tooltip>
@@ -90,7 +92,7 @@
                   flat
                   round
                   size="xs"
-                  v-if="i>0"
+                  v-if="i>0 && chordViewer===false"
                   @click="moveSectionUp(index,i)"
                 >
                   <q-tooltip>Move Up</q-tooltip>
@@ -104,7 +106,7 @@
                   flat
                   round
                   size="xs"
-                  v-if="partPosition[index].length>1 && i<column.length-1"
+                  v-if="partPosition[index].length>1 && i<column.length-1 && chordViewer===false"
                   @click="moveSectionDown(index, i)"
                 >
                   <q-tooltip>Move Down</q-tooltip>
@@ -118,7 +120,7 @@
                   flat
                   round
                   size="xs"
-                  v-if="column.length > 1"
+                  v-if="column.length > 1 && chordViewer===false"
                   @click="removeSection(index,i,section)"
                 >
                   <q-tooltip>Remove</q-tooltip>
@@ -137,7 +139,7 @@
                             }"
                 v-if="sections[section] !== undefined"
                 v-show="showChords"
-              >{{sections[section].chords}} |</div>
+              >{{sections[section].chords}}<span v-if="chordViewer===false">|</span></div>
               <div
                 :style="{
                             'white-space': 'pre', 
@@ -166,7 +168,7 @@
       :parent="true"
       class="no-overflow"
       drag-cancel=".nodrag"
-      v-if="sections[selectedSection] !== undefined "
+      v-if="sections[selectedSection] !== undefined && chordViewer===false"
     >
       <q-card style="width 100%; margin:10px">
         <q-bar dark class="bg-primary text-white">
@@ -359,6 +361,9 @@ export default {
     },
     showChords: {
       default: true
+    },
+    chordViewer:{
+      default:false
     }
   },
   mounted() {

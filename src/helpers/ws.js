@@ -14,7 +14,7 @@ export const ws_helpers = {
       color: "positive",
       icon: "fas fa-info",
       textColor: "white",
-      position: "center"
+      position: "bottom"
     });
   },
 
@@ -587,9 +587,6 @@ export const ws_helpers = {
     
               if (chordPart.slice(chordPart.length-1).indexOf(extension) !== -1 &&  chordExtension===false) {
                 chord = chordPart.substring(0, chordPart.length-1)
-           
-     
-                
                 newChord = configChords[chord][val] + extension;
                 newChord = newChord.charAt(0).toUpperCase() + newChord.slice(1)
    
@@ -671,8 +668,12 @@ export const ws_helpers = {
 
             let songdata = song.data();
           //  console.log(songdata)
-            songdata.searchref = songdata.title;
+            songdata.searchref = songdata.title.toLowerCase();
             songdata.songid = song.id;
+            songdata.sections.forEach((section,index) => {
+              // partPosition[0].push(index)
+               songdata.searchref += section.text.toLowerCase();
+             });
             /*
             songdata.columns.forEach(column => {
               column.sections.forEach((section,index) => {
@@ -738,22 +739,26 @@ export const ws_helpers = {
   filterSongs(str) {
     
     return new Promise((res, rej) => {
-      let songs = Vue.prototype.$store.getters["defaultModule/getSongList"];
+
       if (str.length >= 3) {
-
-
-        let obj = songs.filter(o =>
-          o.searchref.toLowerCase().includes(str.toLowerCase())
-        );
-        let sng = [];
-        obj.forEach(song => {
-          sng.push(song);
-        });
-        const uniquesongs = Array.from(new Set(sng.map(a => a.id))).map(id => {
-          return sng.find(a => a.id === id);
-        });
+        let obj = {}
+        this.allSongs().then(songs=>{
+         Object.keys(songs).forEach(key=>{
       
-        res(sng);
+           if(songs[key].searchref.indexOf(str.toLowerCase()) !== -1){
+  
+            obj[key] = songs[key]
+           }
+         })
+
+         res(obj)
+         
+        })
+      
+      } else {
+        this.allSongs().then(songs=>{
+          res(songs)
+        })
       }
     });
   },

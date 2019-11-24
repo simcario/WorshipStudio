@@ -81,18 +81,22 @@ module.exports = function (ctx) {
         'QTabPanels',
         'QInnerLoading',
         'QSpinnerGears',
+        'QSpinnerBars',
         'QBadge',
         'QDate',
         'QPopupProxy',
         'QToggle',
         'QColor',
         'QFooter',
-        'QBtnGroup'
+        'QBtnGroup',
+        'QTree',
+        'QScrollArea'
       ],
 
       directives: [
         'Ripple',
-        'ClosePopup'
+        'ClosePopup',
+        'TouchRepeat'
       ],
 
       // Quasar plugins

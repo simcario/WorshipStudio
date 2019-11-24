@@ -17,7 +17,40 @@ http.listen(7777)
 const electron = require("electron");
 const shell = require('electron').shell;
 const PCName = store.get('pc-name') || 'COMPUTER'
-//import { ws } from "./ws";
+const fs = require('fs')
+const chokidar = require('chokidar');
+const rootPath = require('electron-root-path').rootPath;
+var padsDir = rootPath.replace(/\\/g, "/") + '/Library/Pads';
+
+try {
+  if (!fs.existsSync(padsDir)) {
+    fs.mkdirSync(padsDir, {
+      recursive: true
+    }, err => {})
+  }
+} catch (err) {
+  console.error(err)
+}
+
+function readDir(dir){
+  return new Promise(resolve=>{
+    fs.readdir(dir, function (err, items) {
+
+      resolve(items)
+  
+    });
+  })
+}
+
+
+chokidar.watch(padsDir).on('all', (event, path) => {
+  readDir(padsDir).then(items=>{
+    mainWindow.webContents.send('pad-folder', items)
+  })
+});
+
+
+
 
 import {
   app,
@@ -40,7 +73,7 @@ server.disable("etag");
 server.get('/file/:name', (req, res) => {
   let filename = req.params.name
   res.sendFile(filename)
-  console.log(filename)
+
 
 })
 /*
@@ -95,17 +128,14 @@ ipcMain.on("pc-name", (event, name) => {
   store.set('pc-name', name)
 
 });
-
 ipcMain.on('open-download-link', (evt) => {
   shell.openExternal("https://www.simonpietro.it/worshipstudio/downloads/WorshipStudio.exe");
   app.quit()
 })
-
 ipcMain.on('song', (event, song) => {
   // sendMessage('song', song)
   mainWindow.webContents.send('song', song)
 })
-
 ipcMain.on('get-playlist', (event) => {
   sendMessage('playlist-data', playlist)
   mainWindow.webContents.send('playlist-data', playlist)
@@ -125,8 +155,6 @@ ipcMain.on("update-playlist", (evt, content) => {
   sendMessage('playlist-data', playlist)
   mainWindow.webContents.send('playlist-data', playlist)
 });
-
-
 ipcMain.on("slide", (evt, slide) => {
 
   if (slideWindow !== undefined) {
@@ -135,16 +163,11 @@ ipcMain.on("slide", (evt, slide) => {
   }
 
 });
-
 ipcMain.on("black", (evt, status) => {
   if (slideWindow !== undefined) {
     slideWindow.webContents.send("black", status);
   }
 });
-
-
-
-
 ipcMain.on("open-slide-window", (event, data) => {
   if (slideWindowOpen !== true) {
     console.log("open-slide-window");
@@ -172,7 +195,6 @@ ipcMain.on("restart-app", (event, data) => {
   app.relaunch();
   app.quit();
 });
-
 ipcMain.on("choose-slide-background", (event, data) => {
 
   const options = {
@@ -188,7 +210,7 @@ ipcMain.on("choose-slide-background", (event, data) => {
 
   if (data.backgroundType === 'image' || data.backgroundType === 'video') {
     dialog.showOpenDialog(null, options, (filePaths) => {
- 
+
       event.sender.send('slide-background-selected', {
         filePath: filePaths[0],
         songID: data.songID,
@@ -198,29 +220,29 @@ ipcMain.on("choose-slide-background", (event, data) => {
     });
   }
 })
-
 ipcMain.on("select-file", (event, data) => {
 
   const options = {
     title: data.title,
-    //defaultPath: '/path/to/something/',
-    //buttonLabel: 'Do it',
-   filters:data.filters
-    /*[
-      { name: 'xml', extensions: ['xml'] }
-    ],*/
-    //properties: ['showHiddenFiles'],
-    //message: 'This message will only be shown on macOS'
+    filters: data.filters
   };
+  dialog.showOpenDialog(null, options, (filePaths) => {
+    event.sender.send(data.event, {
+      filePath: filePaths[0],
+      data: data.data
+    })
+  });
 
+})
+ipcMain.on("send-me-files", () => {
+  mainWindow.webContents.send('library-folders', {
+    pads: padsDir
+  })
 
-    dialog.showOpenDialog(null, options, (filePaths) => {
-      event.sender.send(data.event, {
-        filePath: filePaths[0],
-        data: data.data
-      })
-    });
-
+  readDir(padsDir).then(items=>{
+    mainWindow.webContents.send('pad-folder', items)
+  })
+ 
 })
 
 var secret = "W0rsh1pstudi0";
@@ -274,11 +296,11 @@ function createWindow() {
   });
 
   mainWindow.loadURL(process.env.APP_URL);
- // setTimeout(() => {
-    mainWindow.maximize();
+  // setTimeout(() => {
+  mainWindow.maximize();
   //}, 6000);
   //mainWindow.hide();
- // createSplashScreen();
+  // createSplashScreen();
 }
 
 function createSplashScreen() {
@@ -323,7 +345,7 @@ function createSlideWindow() {
     if (displays[i].bounds.x != 0 || displays[i].bounds.y != 0) {
       externalDisplay = displays[i];
       break;
-   }
+    }
   }
 
   if (externalDisplay) {
@@ -354,6 +376,7 @@ app.on("ready", () => {
   globalShortcut.register('F5', () => {
     mainWindow.webContents.send("F5");
   })
+
   /*
   globalShortcut.register('left', () => {
     mainWindow.webContents.send("left");

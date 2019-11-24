@@ -303,6 +303,31 @@ export function setSongTextStyle(context, songInfo) {
   })
 }
 
+export function setSongPad(context, songInfo) {
+  return new Promise(res => {
+    let songsLocalSettings = JSON.parse(localStorage.getItem('songsLocalSettings')) || {};
+
+    if (songsLocalSettings[songInfo.songID] === undefined) {
+      songsLocalSettings[songInfo.songID] = {}
+    }
+    if (songsLocalSettings[songInfo.songID]['pad'] === undefined) {
+      songsLocalSettings[songInfo.songID]['pad'] = {
+        filename:songInfo.fileName,
+        region: songInfo.region,
+      }
+    } else {
+      songsLocalSettings[songInfo.songID]['pad'] = {
+        filename:songInfo.fileName,
+        region: songInfo.region,
+      }
+    }
+    
+    localStorage.setItem("songsLocalSettings", JSON.stringify(songsLocalSettings));
+    context.commit("retrieveSongsLocalSettings", songsLocalSettings);
+    res("OK");
+  })
+}
+
 export function saveSlideTemplate(context, template) {
   return new Promise((res, rej) => {
     let templates = JSON.parse(localStorage.getItem('slideTemplates')) || {};
@@ -321,4 +346,21 @@ export function deleteSongTemplate(context, id) {
     context.commit("retrieveSlideTemplates", templates)
     res('ok')
   })
+}
+
+export function createPadFolder(context, data){
+  let padLibrary = JSON.parse(localStorage.getItem('padLibrary')) || {}
+  if(padLibrary['folders'] === undefined){
+    padLibrary['folders'] = {};
+  }
+  padLibrary['folders'][data.folderID] = {
+    name:data.folderName,
+    items:[]
+  }
+  localStorage.setItem('padLibrary', JSON.stringify(padLibrary))
+  context.commit("retrievePadLibrary", padLibrary)
+}
+
+export function updatePadLibrary(context, data){
+  let padLibrary = JSON.parse(localStorage.getItem('padLibrary')) || {}
 }

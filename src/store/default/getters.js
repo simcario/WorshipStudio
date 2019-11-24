@@ -71,3 +71,7 @@ export function getSongsLocalSettings(state){
 export function getSlideTemplates(state){
     return state.slideTemplates
 }
+
+export function getPadLibrary(state){
+    return state.padLibrary
+}

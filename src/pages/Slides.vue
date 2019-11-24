@@ -1,16 +1,10 @@
 <template>
   <q-page>
-    <q-toolbar class="bg-grey-4 glossy">
-      <q-btn flat icon @click="TemplateEditorDialog=true">
-        <q-icon name="fas fa-columns"></q-icon>
-        <q-tooltip>New Template</q-tooltip>
-      </q-btn>
-    </q-toolbar>
     <splitpanes class="default-theme" style="height: 88vh">
       <pane size="25">
         <splitpanes horizontal>
-          <pane class="bg-grey-5">
-            <div class="row justify-center ">
+          <pane class="bg-grey-5" size="40">
+            <div class="row justify-center">
               <div class="col-auto">
                 <SlideThumb
                   v-if="selectedSlideIndex!==null"
@@ -23,43 +17,31 @@
                   :template="slideTemplate(selectedSlideIndex)"
                 />
               </div>
-            </div>
-          </pane>
-          <!-- Preview -->
-          <pane>
-            <q-tabs dense v-model="activeTab" class="bg-grey-6 shadow-2 glossy">
-              <q-tab name="library" label="Library" />
-              <q-tab name="currentPlaylist" label="Playlist" />
-              <q-tab name="cloudPlaylists" label="Cloud Playlists">
-                <q-badge
-                  v-show="cloudPlaylists.length>0"
-                  color="red"
-                  floating
-                >{{cloudPlaylists.length}}</q-badge>
-              </q-tab>
-            </q-tabs>
-            <q-tab-panels v-model="activeTab">
-              <!-- Library -->
-              <q-tab-panel style="padding:0px; overflow:scroll" name="library">
-                
-                <q-input filled dense label="Search" v-model="searchText" >
+            </div> 
+          </pane><!-- Slide Preview -->
+          <pane size="40" style="display:flex">
+            <q-card dark class="bg-grey-9" style="width:100%">
+              <q-card-section style="height:20% ;padding:0px;overflow:hidden">
+                <q-input filled dense dark label="Search" v-model="searchText">
                   <template v-slot:prepend>
                     <q-icon name="fas fa-search" />
                   </template>
-                     <template v-slot:append v-if="searchText !== ''">
-                  <q-icon name="close" @click="clearText()" />
-                </template>
-
+                  <template v-slot:append v-if="searchText !== ''">
+                    <q-icon name="close" @click="clearText()" />
+                  </template>
                 </q-input>
-                <q-list style="height:39vh">
-                  <div v-for="(song,index) in songs" :key="index">
+              </q-card-section>
+              <q-card-section class="scroll" style="height:80% ;padding:0px;overflow-y:scroll">
+                <q-list dense>
+                  <div v-for="(song,index) in songList" :key="index">
                     <q-item
                       clickable
                       v-ripple
-                      :active="song.id === currentSong"
-                      active-class="bg-teal-1 text-grey-8"
+                      :active="song.songid === currentSong"
+                      active-class="bg-grey-8 text-white"
                       style="padding: 0px 16px;"
                       @click="openSong(song.songid)"
+                      @dblclick="openFullScreen(song)"
                     >
                       <q-menu touch-position context-menu>
                         <!-- Context Menu -->
@@ -83,7 +65,7 @@
                             <q-item-section>Delete</q-item-section>
                           </q-item>
                           <q-separator />
-                          <q-item clickable v-close-popup @click="$ws.addToPlaylist(song)">
+                          <q-item clickable v-close-popup @click="$ws.addToPlaylist(song.songid)">
                             <q-item-section avatar>
                               <q-icon size="16px" name="fas fa-list" />
                             </q-item-section>
@@ -91,93 +73,143 @@
                           </q-item>
                         </q-list>
                       </q-menu>
-                      <q-item-section @dblclick="$ws.playSong(song.songid)">
-                        <q-item-label>{{song.title}}</q-item-label>
-                        <q-item-label caption>{{song.author}}</q-item-label>
+                      <q-item-section @dblclick="openSongFull(song)">
+                        <q-item-label style="font-weight:bold">{{song.title}}</q-item-label>
+                        <q-item-label caption class="text-white">{{song.author}}</q-item-label>
                       </q-item-section>
-                      <q-item-section top side>{{song.number}}</q-item-section>
+                      <q-item-section top side class="text-white">
+                        {{song.number}}
+                        <br />
+                        <q-icon
+                          flat
+                          name="fas fa-volume-off"
+                          size="12px"
+                          v-show="songsSettings[song.songid] !== undefined && songsSettings[song.songid].pad !== undefined"
+                        />
+                      </q-item-section>
                     </q-item>
                     <q-separator v-if="index < songs.length-1" />
                   </div>
                 </q-list>
-              </q-tab-panel>
-              <!-- /Library -->
-              <!--Playlist -->
-              <q-tab-panel name="currentPlaylist" style="padding:0px; overflow:scroll">
-                <q-list style="height:39vh">
-                  <draggable
-                    class="list-group"
-                    tag="div"
-                    v-model="playlist.items"
-                    @end="$ws.updatePlaylist(playlist)"
-                  >
-                    <div v-for="(song,index) in playlist.items" :key="index">
-                      <q-item
-                        clickable
-                        v-ripple
-                        :active="song.songid === currentSong.songid"
-                        active-class="bg-teal-1 text-grey-8"
-                        style="padding: 0px 16px;"
-                        @click="openPlaylistSong(index)"
-                      >
-                        <q-menu touch-position context-menu>
-                          <!-- Context Menu -->
-                          <q-list dense style="min-width: 100px">
-                            <q-item clickable v-close-popup @click="$ws.removeFromPlaylist(index)">
-                              <q-item-section avatar>
-                                <q-icon size="16px" name="fas fa-ban" />
-                              </q-item-section>
-                              <q-item-section>Remove</q-item-section>
-                            </q-item>
-                          </q-list>
-                        </q-menu>
-                        <q-item-section>
-                          <div>
-                            <!--
+              </q-card-section>
+            </q-card>
+           
+          </pane> <!-- Library-->
+         
+          <pane  style="display:flex">
+            <q-card dark class="bg-grey-9 fill" style="width:100%">
+              <q-tabs
+                dense
+                v-model="activeTab"
+                class="bg-grey-9 shadow-2 glossy text-white"
+                style="height:50px"
+              >
+                <q-tab name="currentPlaylist" label="Playlist" />
+                <q-tab name="cloudPlaylists" label="Cloud Playlists">
+                  <q-badge
+                    v-show="cloudPlaylists.length>0"
+                    color="red"
+                    floating
+                  >{{cloudPlaylists.length}}</q-badge>
+                </q-tab>
+              </q-tabs>
+              <q-tab-panels v-model="activeTab" style="height:83%" class="bg-grey-9">
+                <!--Playlist -->
+                <q-tab-panel name="currentPlaylist"  style="padding:0px; overflow-y:auto">
+                  <q-list dark class="bg-grey-9">
+                    <draggable
+                      class="list-group bg-grey-9"
+                      tag="div"
+                      v-model="playlist.items"
+                      @end="$ws.updatePlaylist(playlist)"
+                    >
+                      <div v-for="(song,index) in playlist.items" :key="index">
+                        <q-item
+                          clickable
+                          v-ripple
+                          :active="song === currentSong"
+                          active-class="bg-grey-8 text-white"
+                          style="padding: 0px 16px;"
+                          @click="openPlaylistSong(index)"
+                        >
+                          <q-menu touch-position context-menu>
+                            <!-- Context Menu -->
+                            <q-list dense style="min-width: 100px">
+                              <q-item
+                                clickable
+                                v-close-popup
+                                @click="$ws.removeFromPlaylist(index)"
+                              >
+                                <q-item-section avatar>
+                                  <q-icon size="16px" name="fas fa-ban" />
+                                </q-item-section>
+                                <q-item-section>Remove</q-item-section>
+                              </q-item>
+                            </q-list>
+                          </q-menu>
+                          <q-item-section>
+                            <div>
+                              <!--
                           <q-badge
                             color="purple"
                             text-color="white"
                             :floating="false"
                             :label="index+1"
-                            />-->
-                            {{song.title}}
-                          </div>
+                              />-->
+                              {{songs[song].title}}
+                            </div>
+                          </q-item-section>
+                          <q-item-label caption>{{songs[song].author}}</q-item-label>
+                          <q-item-section top side class="text-white">
+                            {{songs[song].number}}
+                            <br />
+                            <q-icon
+                              flat
+                              name="fas fa-volume-off"
+                              size="12px"
+                              v-show="songsSettings[song] !== undefined && songsSettings[song].pad !== undefined"
+                            />
+                          </q-item-section>
+                        </q-item>
+                        <q-separator v-if="index < playlist.items.length-1" />
+                      </div>
+                    </draggable>
+                  </q-list>
+                </q-tab-panel>
+                <q-tab-panel name="cloudPlaylists" class="q-pa-none">
+                  <q-list bordered>
+                    <div v-for="(pl, index) in cloudPlaylists" :key="index">
+                      <q-item clickable v-ripple @dblclick="$ws.loadCloudPlaylist(pl)">
+                        <q-menu touch-position context-menu>
+                          <!-- Context Menu -->
+                          <q-list dense style="min-width: 100px">
+                            <q-item clickable v-close-popup @click="removeCloudPlaylist(pl.id) ">
+                              <q-item-section avatar>
+                                <q-icon size="16px" name="fas fa-trash-alt" />
+                              </q-item-section>
+                              <q-item-section>Delete</q-item-section>
+                            </q-item>
+                          </q-list>
+                        </q-menu>
+                        <q-item-section>
+                          <q-item-label>{{pl.title}}</q-item-label>
+                          <q-item-label caption>
+                            Created by
+                            <strong>{{pl.createdBy}}</strong>
+                          </q-item-label>
                         </q-item-section>
-                        <q-item-label caption>{{song.author}}</q-item-label>
                       </q-item>
-                      <q-separator v-if="index < playlist.items.length-1" />
+                      <q-separator v-if="index < cloudPlaylists.length-1" />
                     </div>
-                  </draggable>
-                </q-list>
-              </q-tab-panel>
-              <q-tab-panel name="cloudPlaylists" class="q-pa-none ">
-                <q-list bordered>
-                  <div v-for="(pl, index) in cloudPlaylists" :key="index">
-                    <q-item clickable v-ripple @dblclick="$ws.loadCloudPlaylist(pl)">
-                      <q-menu touch-position context-menu>
-                        <!-- Context Menu -->
-                        <q-list dense style="min-width: 100px">
-                          <q-item clickable v-close-popup @click="removeCloudPlaylist(pl.id) ">
-                            <q-item-section avatar>
-                              <q-icon size="16px" name="fas fa-trash-alt" />
-                            </q-item-section>
-                            <q-item-section>Delete</q-item-section>
-                          </q-item>
-                        </q-list>
-                      </q-menu>
-                      <q-item-section>
-                        <q-item-label>{{pl.title}}</q-item-label>
-                        <q-item-label caption>
-                          Created by
-                          <strong>{{pl.createdBy}}</strong>
-                        </q-item-label>
-                      </q-item-section>
-                    </q-item>
-                    <q-separator v-if="index < cloudPlaylists.length-1" />
-                  </div>
-                </q-list>
-              </q-tab-panel>
-            </q-tab-panels>
+                  </q-list>
+                </q-tab-panel>
+              </q-tab-panels>
+              <q-bar dark dense class="bg-grey-8">
+                <q-btn flat round icon="fas fa-save" color="white" @click="playListNameDialog=true">
+                  <q-tooltip>Save Playlist</q-tooltip>
+                </q-btn>
+              </q-bar>
+            </q-card>
           </pane>
           <!-- Library & Playlists -->
         </splitpanes>
@@ -187,7 +219,7 @@
       <pane size="75" bg-grey-5>
         <splitpanes horizontal>
           <pane class="bg-grey-5">
-            <div class="q-pa-xs ">
+            <div class="q-pa-xs">
               <div class="row justify-center">
                 <div
                   class="col-2 q-ma-md"
@@ -212,8 +244,6 @@
           <pane>
             <q-tabs dense v-model="activeTab2" inline-label align="left" class="bg-grey-6 glossy">
               <q-tab name="slide-templates" icon="fas fa-columns" label="Slide Templates" />
-              <q-tab name="alarms" icon="alarm" label="Alarms" />
-              <q-tab name="movies" icon="movie" label="Movies" />
             </q-tabs>
             <q-tab-panels v-model="activeTab2">
               <q-tab-panel name="slide-templates" class="bg-grey-5" style="height:100vh;">
@@ -292,20 +322,18 @@ export default {
   },
   mounted() {
     this.getCloudPlaylists();
-      this.$ws.allSongs().then(songs => {
+    this.$ws.allSongs().then(songs => {
       this.songs = songs;
     });
-
     this.$renderer.send("open-slide-window");
+    this.$root.$on("open-template-editor", () => {
+      this.TemplateEditorDialog = true;
+    });
     this.$root.$on("close-template-editor", () => {
       this.TemplateEditorDialog = false;
       this.selectedTemplate = null;
     });
-    /*
-    this.$ws.loadAllSongs().then(songs => {
-      this.songs = songs;
-    });
-    */
+
     this.$renderer.send("get-playlist");
 
     this.$renderer.on("playlist-data", (evt, playlist) => {
@@ -319,18 +347,18 @@ export default {
       cloudPlaylists: [],
       currentSong: {},
       playlist: [],
-      searchText:'',
+      searchText: "",
       selectedSlideIndex: null,
       selectedPlaylistIndex: null,
       selectedTemplate: null,
-      songs:{},
+      songs: {},
       songParts: [],
       templates: {},
       TemplateEditorDialog: false
     };
   },
   methods: {
-      reloadSongs() {
+    reloadSongs() {
       this.$ws.allSongs().then(songs => {
         this.songs = songs;
       });
@@ -339,34 +367,21 @@ export default {
       let sections = [];
       this.selectedSlideIndex = null;
       this.currentSong = id;
-      let song = this.songs[id]
-      console.log(song)
-       console.log(id)
-      //this.currentSong = song.songid;
-      /*
-      song.columns.forEach(element => {
-        element.sections.forEach(section => {
-          sections.push(section);
-        });
-      });
-      */
+      let song = this.songs[id];
+
       this.songParts = song.sections;
     },
-     filterSongs(filter) {
+    filterSongs(filter) {
       this.$ws.filterSongs(filter).then(songs => {
-        this.songList = songs;
+        console.log("FILTERED", songs);
+        this.songs = songs;
       });
     },
     openPlaylistSong(index) {
       let sections = [];
       this.selectedPlaylistIndex = index;
       this.currentSong = this.playlist.items[index];
-      this.currentSong.columns.forEach(element => {
-        element.sections.forEach(section => {
-          sections.push(section);
-        });
-      });
-      this.songParts = sections;
+      this.openSong(this.currentSong);
     },
     playSlide(slide, index) {
       this.selectedSlideIndex = index;
@@ -381,17 +396,16 @@ export default {
     },
     slideTemplate(slideIndex) {
       return this.songsLocalSettings[this.currentSong] !== undefined &&
-        this.songsLocalSettings[this.currentSong]["slides"][
-          slideIndex
-        ] !== undefined &&
+        this.songsLocalSettings[this.currentSong]["slides"] !== undefined &&
+        this.songsLocalSettings[this.currentSong]["slides"][slideIndex] !==
+          undefined &&
         this.slideTemplates[
           this.songsLocalSettings[this.currentSong]["slides"][slideIndex]
             .template
         ] !== undefined
         ? this.slideTemplates[
-            this.songsLocalSettings[this.currentSong]["slides"][
-              slideIndex
-            ].template
+            this.songsLocalSettings[this.currentSong]["slides"][slideIndex]
+              .template
           ]
         : {
             id: null,
@@ -417,7 +431,7 @@ export default {
       }
     },
     setSongTemplate(id, template) {
-      let song = this.songs[id]
+      let song = this.songs[id];
       song.columns.forEach(element => {
         element.sections.forEach((section, index) => {
           this.$store.dispatch("defaultModule/setSongTemplate", {
@@ -426,7 +440,7 @@ export default {
             slideIndex: index
           });
         });
-      })
+      });
     },
     deleteTemplate(templateID) {
       this.$q.notify({
@@ -483,6 +497,12 @@ export default {
     }
   },
   computed: {
+    songsSettings() {
+      return this.$store.getters["defaultModule/getSongsLocalSettings"];
+    },
+    songList() {
+      return this.songs;
+    },
     slideTemplates() {
       return this.$store.getters["defaultModule/getSlideTemplates"];
     },
@@ -490,26 +510,20 @@ export default {
       get() {
         return this.$store.getters["defaultModule/getSongsLocalSettings"];
       }
-    },
-  
-    songs(){
-      return this.$store.getters["defaultModule/getSongs"];
     }
-  }, watch:{
-    searchText(){
+  },
+  watch: {
+   searchText() {
       this.$ws.filterSongs(this.searchText).then(ret => {
-    
-       this.songList = ret
-     })
-    }
+        this.songs = ret;
+      });
+    },
+
   }
 };
 </script>
 
 <style lang="scss">
-.splitpanes__pane {
-}
-
 .splitpanes__pane span {
   font-family: Helvetica, Arial, sans-serif;
   color: #fff;
@@ -518,12 +532,4 @@ export default {
 }
 </style>
 <style >
-.toolbar-bg {
-  background: linear-gradient(
-    to bottom,
-    rgba(199, 199, 199, 1) 0%,
-    rgba(184, 184, 184, 1) 47%,
-    rgba(120, 120, 120, 1) 100%
-  );
-}
 </style>

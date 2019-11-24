@@ -24,4 +24,6 @@ export default {
   songsLocalSettings: JSON.parse(localStorage.getItem('songsLocalSettings')) || {},
 
   slideTemplates: JSON.parse(localStorage.getItem('slideTemplates')) || {},
+
+  padLibrary: JSON.parse(localStorage.getItem('padLibrary')) || {},
 }
