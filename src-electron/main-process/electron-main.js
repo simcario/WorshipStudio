@@ -60,7 +60,7 @@ import {
   dialog,
   globalShortcut
 } from "electron";
-
+app.commandLine.appendSwitch('inspect', '5858')
 
 server.use(bodyParser.json());
 server.use(cors());
@@ -245,11 +245,11 @@ ipcMain.on("send-me-files", () => {
  
 })
 
-var secret = "W0rsh1pstudi0";
+var secret = "scarioti@gmail.com";
 
 var simpleCrypto = new SimpleCrypto(secret);
 var string =
-  "valid|Chiesa Evangelica della Riconciliazione CZ|scarioti@gmail.com|studio|Chords|2019-12-31";
+  "valid|Chiesa Evangelica della Riconciliazione Catanzaro|scarioti@gmail.com|EU71qF1ZZNb9MXiRtBJs|2019-12-31|church|Chords";
 var chiperText = simpleCrypto.encrypt(string);
 var decrypted = simpleCrypto.decrypt(chiperText);
 console.log(chiperText);
@@ -286,6 +286,7 @@ function createWindow() {
       webSecurity: false
     }
   });
+  
   mainWindow.on("close", event => {
     app.quit();
   });
@@ -391,6 +392,9 @@ app.on("ready", () => {
   globalShortcut.register('pageup', () => {
     mainWindow.webContents.send("pageup");
   })
+
+ 
+ 
 });
 
 app.on("window-all-closed", () => {

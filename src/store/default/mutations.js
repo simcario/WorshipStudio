@@ -23,23 +23,23 @@ export function destroySession (state) {
 }
 
 export function retrieveUser (state, user) {
-    state.loggedIn = true;
     state.displayName = user.displayName;
     state.organizationName = user.organizationName;
     state.email = user.email;
     state.organizationID = user.organizationID;
     state.licenseKey = user.licenseKey
-    state.licenseName = user.licenseName;
     state.licenseType = user.licenseType;
     state.licenseEmail = user.licenseEmail;
     state.validUntil = user.validUntil;
     state.startModule = user.startModule;
-    state.networkEnabled = user.networkEnabled;
 }
+
+
 
 export function retrieveSettings (state, settings) {
     state.computerName = settings.computerName;
     state.startModule = settings.startModule;
+    state.organizationID = settings.organizationID;
     state.licenseName = settings.licenseName;
     state.licenseType = settings.licenseType;
     state.licenseEmail = settings.licenseEmail;

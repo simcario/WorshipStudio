@@ -3,7 +3,7 @@
     <splitpanes class="default-theme" style="height: 88vh">
       <pane size="25">
         <splitpanes horizontal>
-          <pane class="bg-grey-5" size="40">
+          <pane class="bg-grey-5" size="42">
             <div class="row justify-center">
               <div class="col-auto">
                 <SlideThumb
@@ -131,6 +131,7 @@
                           active-class="bg-grey-8 text-white"
                           style="padding: 0px 16px;"
                           @click="openPlaylistSong(index)"
+                          v-if="allSongs[song] !== undefined"
                         >
                           <q-menu touch-position context-menu>
                             <!-- Context Menu -->
@@ -156,12 +157,12 @@
                             :floating="false"
                             :label="index+1"
                               />-->
-                              {{songs[song].title}}
+                              {{allSongs[song].title}}
                             </div>
                           </q-item-section>
-                          <q-item-label caption>{{songs[song].author}}</q-item-label>
+                          <q-item-label caption>{{allSongs[song].author}}</q-item-label>
                           <q-item-section top side class="text-white">
-                            {{songs[song].number}}
+                            {{allSongs[song].number}}
                             <br />
                             <q-icon
                               flat
@@ -177,7 +178,7 @@
                   </q-list>
                 </q-tab-panel>
                 <q-tab-panel name="cloudPlaylists" class="q-pa-none">
-                  <q-list bordered>
+                  <q-list dark>
                     <div v-for="(pl, index) in cloudPlaylists" :key="index">
                       <q-item clickable v-ripple @dblclick="$ws.loadCloudPlaylist(pl)">
                         <q-menu touch-position context-menu>
@@ -322,9 +323,7 @@ export default {
   },
   mounted() {
     this.getCloudPlaylists();
-    this.$ws.allSongs().then(songs => {
-      this.songs = songs;
-    });
+    this.reloadSongs()
     this.$renderer.send("open-slide-window");
     this.$root.$on("open-template-editor", () => {
       this.TemplateEditorDialog = true;
@@ -342,7 +341,7 @@ export default {
   },
   data() {
     return {
-      activeTab: "library",
+      activeTab: "currentPlaylist",
       activeTab2: "slide-templates",
       cloudPlaylists: [],
       currentSong: {},
@@ -352,6 +351,7 @@ export default {
       selectedPlaylistIndex: null,
       selectedTemplate: null,
       songs: {},
+      allSongs:{},
       songParts: [],
       templates: {},
       TemplateEditorDialog: false
@@ -361,6 +361,7 @@ export default {
     reloadSongs() {
       this.$ws.allSongs().then(songs => {
         this.songs = songs;
+         this.allSongs = songs
       });
     },
     openSong(id) {

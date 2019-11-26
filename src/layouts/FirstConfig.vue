@@ -22,13 +22,13 @@
                 Licensed to :
                 <strong>{{decrypted[1]}}</strong>
                 <br />Email:
-                <strong>{{decrypted[2]}}</strong>
-                <br />License Type:
                 <strong>{{decrypted[3]}}</strong>
-                <br />Default Module:
+                <br />License Type:
                 <strong>{{decrypted[4]}}</strong>
-                <br />Valid Until:
+                <br />Default Module:
                 <strong>{{decrypted[5]}}</strong>
+                <br />Valid Until:
+                <strong>{{decrypted[6]}}</strong>
                 <br />
               </span>
             </div>
@@ -122,9 +122,11 @@ export default {
 
       this.computers = servers;
     });
+    /*
     if (this.user.loggedIn === "false" || this.user.loggedIn === false) {
       this.$router.push({ path: "/Login" });
     }
+    */
     this.txtLicenseKey = this.$store.getters["defaultModule/getLicenseKey"];
     this.$ws.checkLicense(this.txtLicenseKey).then(decrypted => {
       this.decrypted = decrypted;
@@ -145,7 +147,7 @@ export default {
       computerType: "server",
       computers: [],
       serverAddress: {label:'Local Host', ip:'localhost'},
-      startModule: "ChordsHome",
+      startModule: "Chords",
 
       moduleChords:{
         showChords:true
@@ -175,7 +177,7 @@ export default {
       const simpleCrypto = new SimpleCrypto(_secretKey);
 
       const decryptedKey = simpleCrypto.decrypt(this.licenseKey);
-      console.log(decryptedKey);
+
       if (decryptedKey.substring(0, 5) !== "valid") {
         this.decrypted = ["Invalid"];
       } else {
@@ -183,32 +185,14 @@ export default {
       }
     },
     save() {
-      if (this.serverAddress === null) {
-        this.$q.notify({
-          message: "Please select Server Url",
-          color: "negative",
-          icon: "fas fa-exclamation-triangle",
-          textColor: "white",
-          position: "center",
-          actions: [
-            {
-              label: "Dismiss",
-              color: "white",
-              handler: () => console.log("dismiss")
-            }
-          ]
-        });
-        return;
-      }
-      let ServerAddress = "http://" + this.serverAddress.ip;
-      console.log(ServerAddress);
       this.$store
         .dispatch("defaultModule/firstConfig", {
           licenseName: this.decrypted[1],
-          licenseEmail: this.decrypted[2],
-          licenseType: this.decrypted[3],
+          organizationID: this.decrypted[2],
+          licenseEmail: this.decrypted[3],
+          licenseType: this.decrypted[4],
           startModule: this.startModule,
-          validUntil: this.decrypted[5],
+          validUntil: this.decrypted[6],
           computerType: this.computerType,
           computerName: this.txtComputerName,
           moduleChords:JSON.stringify(this.moduleChords)

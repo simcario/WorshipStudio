@@ -1,15 +1,15 @@
 <template>
-  <q-page class="flex flex-center">
+  <q-page class="flex flex-center bg-grey-9">
     <div class="row">
       <div class="col-auto" style="min-width:400px">
-        <q-toolbar class="bg-primary glossy text-white">
+        <q-toolbar class="bg-grey-8 glossy text-white">
           <q-btn flat round dense icon="menu" class="q-mr-sm" />
           <q-toolbar-title>
             <strong>Worship</strong>Studio
             <span class="pageTitle">Login</span>
           </q-toolbar-title>
         </q-toolbar>
-        <q-card>
+        <q-card square class="">
           <q-card-section>
             <q-input filled v-model="username" label="Username" />
           </q-card-section>

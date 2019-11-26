@@ -15,17 +15,18 @@
           <splitpanes horizontal>
             <pane size="20">
               <q-card dark style="text-align:center;" class="bg-grey-9">
-                <q-card-section>
-                  <div class="text-h6">PAD Player</div>
+                <q-bar dense class="bg-grey-10">PAD Player</q-bar>
+                <q-card-section v-if="wave!==null">
                   <marquee direction="left">{{waveName}}</marquee>
                 </q-card-section>
                 <q-card-section style="padding:0px">
                   <div id="waveform"></div>
+                  <q-inner-loading :showing="padLoading">
+                    <q-spinner-bars size="50px" color="primary" />
+                  </q-inner-loading>
                 </q-card-section>
                 <q-card class="section text-center"></q-card>
-                <q-inner-loading :showing="padLoading">
-                  <q-spinner-bars size="50px" color="primary" />
-                </q-inner-loading>
+
                 <q-menu touch-position context-menu>
                   <!-- Context Menu -->
                   <q-list dense style="min-width: 100px">
@@ -42,7 +43,8 @@
             </pane>
             <pane size="40" style="display:flex">
               <q-card dark class="bg-grey-9" style="width:100%">
-                <q-card-section style="height:20% ;padding:0px;overflow:hidden">
+                <q-bar dense class="bg-grey-10">Library</q-bar>
+                <q-card-section style="height:43px ;padding:0px;overflow:hidden">
                   <q-input filled dense dark label="Search" v-model="searchText">
                     <template v-slot:prepend>
                       <q-icon name="fas fa-search" />
@@ -52,7 +54,7 @@
                     </template>
                   </q-input>
                 </q-card-section>
-                <q-card-section class="scroll" style="height:80% ;padding:0px;overflow-y:scroll">
+                <q-card-section class="scroll" style="height:70% ;padding:0px;overflow-y:scroll">
                   <q-list dense>
                     <div v-for="(song,index) in songList" :key="index">
                       <q-item
@@ -122,7 +124,7 @@
                   dense
                   v-model="activeTab"
                   class="bg-grey-9 shadow-2 glossy text-white"
-                  style="height:20%"
+                  style="height:40px"
                 >
                   <q-tab name="currentPlaylist" label="Playlist" />
                   <q-tab name="cloudPlaylists" label="Cloud Playlists">
@@ -151,6 +153,7 @@
                             active-class="bg-grey-8 text-white"
                             style="padding: 0px 16px;"
                             @click="openPlaylistSong(index)"
+                            v-if="allSongs[song] !== undefined"
                           >
                             <q-menu touch-position context-menu>
                               <!-- Context Menu -->
@@ -168,20 +171,11 @@
                               </q-list>
                             </q-menu>
                             <q-item-section>
-                              <div>
-                                <!--
-                          <q-badge
-                            color="purple"
-                            text-color="white"
-                            :floating="false"
-                            :label="index+1"
-                                />-->
-                                {{songs[song].title}}
-                              </div>
+                              <div>{{allSongs[song].title}}</div>
                             </q-item-section>
-                            <q-item-label caption>{{songs[song].author}}</q-item-label>
+                            <q-item-label caption>{{allSongs[song].author}}</q-item-label>
                             <q-item-section top side class="text-white">
-                              {{songs[song].number}}
+                              {{allSongs[song].number}}
                               <br />
                               <q-icon
                                 flat
@@ -197,7 +191,7 @@
                     </q-list>
                   </q-tab-panel>
                   <q-tab-panel name="cloudPlaylists" class="q-pa-none">
-                    <q-list bordered>
+                    <q-list dark>
                       <div v-for="(pl, index) in cloudPlaylists" :key="index">
                         <q-item clickable v-ripple @dblclick="$ws.loadCloudPlaylist(pl)">
                           <q-menu touch-position context-menu>
@@ -243,7 +237,7 @@
         <pane size="75">
           <q-card style="height:88vh; overflow-y:auto">
             <q-card-section v-if="selectedSong !== undefined">
-              <div class="row">
+              <div class="column">
                 <div
                   class="col"
                   style="padding-left:20px; "
@@ -373,6 +367,16 @@ export default {
     this.$renderer.on("playlist-data", (evt, playlist) => {
       this.playlist = playlist;
     });
+
+    this.$renderer.on("F5", evt => {
+      this.playlistSong(0);
+    });
+    this.$renderer.on("pagedown", evt => {
+      this.nextSong();
+    });
+    this.$renderer.on("pageup", evt => {
+      this.prevSong();
+    });
   },
   data() {
     return {
@@ -382,6 +386,7 @@ export default {
       playListNameDialog: false,
       cloudPlaylists: [],
       currentPlaylistTitle: null,
+      currentPlaylistSongIndex: 0,
       currentSong: null,
       playlist: [],
       searchText: "",
@@ -393,6 +398,7 @@ export default {
       waveRegion: {},
       waveName: null,
       songs: {},
+      allSongs: {},
       songToEdit: null,
       TemplateEditorDialog: false,
       transpose: 0,
@@ -446,10 +452,19 @@ export default {
       });
     },
     bindKey(e) {
+
       if (e.keyCode === 112) {
         if (this.wave !== null) {
           this.wave.playPause();
         }
+      }
+      if (e.keyCode === 43) {
+        this.transpose++
+        this.$ws.createAlert('Transpose ' + this.transpose)
+      }
+       if (e.keyCode === 45) {
+        this.transpose--
+        this.$ws.createAlert('Transpose ' + this.transpose)
       }
     },
     clearText() {
@@ -459,6 +474,7 @@ export default {
     reloadSongs() {
       this.$ws.allSongs().then(songs => {
         this.songs = songs;
+        this.allSongs = songs;
       });
     },
     newSong() {
@@ -490,6 +506,23 @@ export default {
         console.log("FILTERED", songs);
         this.songs = songs;
       });
+    },
+    playlistSong(index) {
+      this.currentPlaylistSongIndex = index;
+
+      this.openFullScreen(this.allSongs[this.playlist.items[index]]);
+    },
+    nextSong() {
+      const index = this.currentPlaylistSongIndex + 1;
+      if (index < this.playlist.items.length) {
+        this.playlistSong(index);
+      }
+    },
+    prevSong() {
+      const index = this.currentPlaylistSongIndex - 1;
+      if (index > -1) {
+        this.playlistSong(index);
+      }
     },
     openPlaylistSong(index) {
       let sections = [];
@@ -644,8 +677,15 @@ export default {
         this.wave = wave;
         this.wave.load(this.libraryFolders.pads + "/" + this.waveName);
         this.padLoading = true;
-
+        this.$bus.$emit("status", {
+          message: "Loading pad file ...",
+          color: "yellow",
+          textColor: "black"
+        });
         this.wave.on("ready", () => {
+          this.$bus.$emit("status", {
+            message: "Pad file ready!"
+          });
           this.padLoading = false;
           console.log("WAVEFORM READY WATCHER");
           this.wave.clearRegions();
@@ -662,6 +702,15 @@ export default {
               loop: true
             });
           }
+        });
+
+        this.wave.on("error", err => {
+          this.padLoading = false;
+          console.log(err);
+          this.$bus.$emit("status", {
+            message: "Pad not found",
+            color: "red"
+          });
         });
       });
     }

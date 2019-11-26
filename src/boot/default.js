@@ -23,7 +23,7 @@ import {
 import db from "../helpers/firebase"
 
 import wavesurfer from 'wavesurfer.js'
-
+import moment from 'moment'
 // TODO: from localstorage
 const config = {
   language: "en", //TODO
@@ -66,7 +66,9 @@ export default ({
   Vue.prototype.$wavesurfer = wavesurfer;
   Vue.prototype.$peers = {}
   Vue.prototype.$bus = new Vue()
+  Vue.prototype.$moment = moment;
   Vue.prototype.$ver = "1.0.3"
+  
 
  
     

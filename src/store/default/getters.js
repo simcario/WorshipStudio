@@ -13,6 +13,7 @@ export function getOrganizationName(state) {
 export function getOrganizationID(state) {
     return state.organizationID
 }
+
 export function getStartModule(state) {
     return state.startModule
 }
