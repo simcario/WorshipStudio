@@ -6,14 +6,22 @@
     transition-show="slide-up"
     transition-hide="slide-down"
   >
-    <q-card>
+    <q-card v-if="songToEdit !== null">
       <q-bar dark class="bg-primary text-white">
-        <div v-if="chordViewer===false">
-        <div v-if="edit===false">New Song</div>
-        <div v-else>Edit Song</div>
-        - </div>{{title}}
+        <div v-if="chordViewer === false">
+          <div v-if="edit === false">New Song</div>
+          <div v-else>Edit Song</div>
+          -
+        </div>
+        {{ title }}
         <q-space />
-        <q-btn dense flat icon="fas fa-save" @click="saveSong()" v-if="chordViewer===false">
+        <q-btn
+          dense
+          flat
+          icon="fas fa-save"
+          @click="saveSong()"
+          v-if="chordViewer === false"
+        >
           <q-tooltip content-class="bg-white text-primary">Save</q-tooltip>
         </q-btn>
         <q-btn dense flat icon="close" @click="closeEditor(false)">
@@ -22,68 +30,19 @@
       </q-bar>
 
       <q-card-section>
-        <div class="row">
+        <div class="column" style="height:98vh">
           <div
-            class="col"
-            style="padding-left:20px; "
-            v-for="(column,index) in partPosition"
+            class="col-auto"
+            v-for="(section, index) in currentSong.sections"
             :key="index"
+            @click="makeSelection(index)"
+            v-bind:class="{
+              selectedSection: selectedSection === index 
+            }"
           >
-            <q-bar
-            v-if="chordViewer===false"
-              dense
-              dark
-              class="text-white"
-              v-bind:class="{'bg-accent':selectedColumn===index,'bg-col':selectedColumn!==index}"
-              @click="selectedColumn=index"
-            >
-              Column {{index+1}}
-              <q-space />
-              <q-btn
-                dense
-                flat
-                icon="close"
-                v-if="partPosition.length>1"
-                @click="confirmRemove(index)"
-              ></q-btn>
-            </q-bar>
-            <div
-              v-for="(section, i) in column"
-              :key="i"
-              class="sectionContainer"
-              v-bind:class="{'selectedSection': selectedSection === i && selectedColumn=== index }"
-              @click="makeSelection(section,index)"
-            >
-              <q-bar dense class="bg-white">
+          
+               <q-bar dense class="bg-white">
                 <q-space />
-
-                <q-btn
-                  icon="fas fa-arrow-right"
-                  color="primary"
-                  dense
-                  flat
-                  round
-                  size="xs"
-                  v-if="index + 1 < partPosition.length && sections.length > 1 && chordViewer===false"
-                  @click="moveSectionRight(index,section,i)"
-                >
-                  <q-tooltip>Move Right</q-tooltip>
-                </q-btn>
-                <!-- Btn Right-->
-
-                <q-btn
-                  icon="fas fa-arrow-left"
-                  color="primary"
-                  dense
-                  flat
-                  round
-                  size="xs"
-                  v-if="partPosition.length > 1 && index > 0 && chordViewer===false"
-                  @click="moveSectionLeft(index,section,i)"
-                >
-                  <q-tooltip>Move Left</q-tooltip>
-                </q-btn>
-                <!-- Btn Left-->
 
                 <q-btn
                   icon="fas fa-arrow-up"
@@ -92,8 +51,8 @@
                   flat
                   round
                   size="xs"
-                  v-if="i>0 && chordViewer===false"
-                  @click="moveSectionUp(index,i)"
+                  v-if="index>0 && chordViewer===false"
+                  @click="moveSectionUp(index)"
                 >
                   <q-tooltip>Move Up</q-tooltip>
                 </q-btn>
@@ -106,8 +65,8 @@
                   flat
                   round
                   size="xs"
-                  v-if="partPosition[index].length>1 && i<column.length-1 && chordViewer===false"
-                  @click="moveSectionDown(index, i)"
+                  v-if="currentSong.sections.length>1 && index<currentSong.sections.length-1 && chordViewer===false"
+                  @click="moveSectionDown(index)"
                 >
                   <q-tooltip>Move Down</q-tooltip>
                 </q-btn>
@@ -120,39 +79,43 @@
                   flat
                   round
                   size="xs"
-                  v-if="column.length > 1 && chordViewer===false"
-                  @click="removeSection(index,i,section)"
+                  v-if="currentSong.sections.length > 1 && chordViewer===false"
+                  @click="removeSection(index)"
                 >
                   <q-tooltip>Remove</q-tooltip>
                 </q-btn>
                 <!-- Btn Remove -->
               </q-bar>
 
-              <div
-                :style="{
-                            'white-space': 'pre', 
-                            'color':textStyle.chordsColor, 
-                            'font-size': textStyle.size + 'px',
-                            'font-weight': textStyle.chordsWeight,
-                            'line-height': textStyle.size*2.2 + 'px',
-                            'position': 'absolute',
-                            }"
-                v-if="sections[section] !== undefined"
-                v-show="showChords"
-              >{{sections[section].chords}}<span v-if="chordViewer===false">|</span></div>
-              <div
-                :style="{
-                            'white-space': 'pre', 
-                            'color':textStyle.textColor, 
-                            'font-size': textStyle.size + 'px',
-                            'font-weight': textStyle.textWeight,
-                            'padding-top': textStyle.size + 'px',
-                            'line-height': textStyle.size*2.2 + 'px',
- 
-                            }"
-                v-if="sections[section] !== undefined"
-                editable="true"
-              >{{sections[section].text}}</div>
+
+            <div
+              :style="{
+                'white-space': 'pre',
+                color: songLocalSettings.textStyle.chordsColor,
+                'font-size': songLocalSettings.textStyle.size + 'px',
+                'font-weight': songLocalSettings.textStyle.chordsWeight,
+                'line-height': songLocalSettings.textStyle.size * 2.2 + 'px',
+                position: 'absolute'
+              }"
+              v-if="section !== undefined"
+              v-show="showChords"
+            >
+              {{ section.chords
+              }}<span v-if="chordViewer === false">|</span>
+            </div>
+            <div
+              :style="{
+                'white-space': 'pre',
+                color: songLocalSettings.textStyle.textColor,
+                'font-size': songLocalSettings.textStyle.size + 'px',
+                'font-weight': songLocalSettings.textStyle.textWeight,
+                'padding-top': songLocalSettings.textStyle.size + 'px',
+                'line-height': songLocalSettings.textStyle.size * 2.2 + 'px'
+              }"
+              v-if="section !== undefined"
+              editable="true"
+            >
+              {{ section.text }}
             </div>
           </div>
         </div>
@@ -168,12 +131,16 @@
       :parent="true"
       class="no-overflow"
       drag-cancel=".nodrag"
-      v-if="sections[selectedSection] !== undefined && chordViewer===false"
+      v-if="selectedSection !== undefined && chordViewer === false"
     >
       <q-card style="width 100%; margin:10px">
         <q-bar dark class="bg-primary text-white">
-          <q-btn flat icon="fas fa-file" label="Add Section" @click="addSection" />
-          <q-btn flat icon="fas fa-columns" label="Add Column" @click="addColumn" />
+          <q-btn
+            flat
+            icon="fas fa-file"
+            label="Add Section"
+            @click="addSection"
+          />
         </q-bar>
         <q-tabs dense v-model="selectedTab">
           <q-tab name="info" label="Song Info" icon="fas fa-info" />
@@ -187,7 +154,7 @@
               <q-card-section>
                 <q-input
                   color="primary"
-                  v-model="title"
+                  v-model="currentSong.title"
                   filled
                   dense
                   placeholder="Title"
@@ -197,7 +164,7 @@
               <q-card-section>
                 <q-input
                   color="primary"
-                  v-model="original_title"
+                  v-model="currentSong.original_title"
                   filled
                   dense
                   placeholder="Original Title"
@@ -207,7 +174,7 @@
               <q-card-section>
                 <q-input
                   color="primary"
-                  v-model="author"
+                  v-model="currentSong.author"
                   filled
                   dense
                   placeholder="Author"
@@ -219,7 +186,7 @@
                   <div class="col-6">
                     <q-input
                       color="primary"
-                      v-model="number"
+                      v-model="currentSong.number"
                       filled
                       dense
                       placeholder="Number"
@@ -230,7 +197,7 @@
                   <div class="col-6">
                     <q-input
                       color="primary"
-                      v-model="category"
+                      v-model="currentSong.category"
                       filled
                       dense
                       placeholder="Category"
@@ -246,42 +213,79 @@
               <div class="row">
                 <div class="col-4">
                   <q-btn-group outline>
-                    <q-btn outline color="purple" @click="textStyle.size --" icon="fas fa-minus" />
-                    <q-btn outline color="purple" @click="textStyle.size ++" icon="fas fa-plus" />
+                    <q-btn
+                      outline
+                      color="purple"
+                      @click="songLocalSettings.textStyle.size--"
+                      icon="fas fa-minus"
+                    />
+                    <q-btn
+                      outline
+                      color="purple"
+                      @click="songLocalSettings.textStyle.size++"
+                      icon="fas fa-plus"
+                    />
                     <q-tooltip>Text Size</q-tooltip>
                   </q-btn-group>
                 </div>
                 <div class="col-4">
                   <q-btn-group push class="q-ma-xs">
-                    <q-btn dark text-color="purple" outline unelevated icon="fas fa-font">
+                    <q-btn
+                      dark
+                      text-color="purple"
+                      outline
+                      unelevated
+                      icon="fas fa-font"
+                    >
                       <q-tooltip>Text Color</q-tooltip>
                       <div class="small-icon">
                         <q-icon name="fas fa-fill-drip" size="10px" />
                       </div>
                       <div
                         class="picker-result"
-                        :style="{'background-color': textStyle.textColor}"
-                      >&nbsp;</div>
+                        :style="{ 'background-color': songLocalSettings.textStyle.textColor }"
+                      >
+                        &nbsp;
+                      </div>
                       <q-popup-proxy>
-                        <q-color v-model=" textStyle.textColor" format-model="hexa" />
+                        <q-color
+                          v-model="songLocalSettings.textStyle.textColor"
+                          format-model="hexa"
+                        />
                       </q-popup-proxy>
                     </q-btn>
-                    <q-btn outline color="purple" @click="textStyle.textWeight = 'bold'" icon="fas fa-bold" >
-                       <q-tooltip>Text Bold</q-tooltip>
+                    <q-btn
+                      outline
+                      color="purple"
+                      @click="textStyle.textWeight = 'bold'"
+                      icon="fas fa-bold"
+                    >
+                      <q-tooltip>Text Bold</q-tooltip>
                     </q-btn>
                   </q-btn-group>
                   <q-btn-group>
-                    <q-btn dark text-color="purple" outline unelevated icon="fas fa-music">
+                    <q-btn
+                      dark
+                      text-color="purple"
+                      outline
+                      unelevated
+                      icon="fas fa-music"
+                    >
                       <q-tooltip>Chords Color</q-tooltip>
                       <div class="small-icon">
                         <q-icon name="fas fa-fill-drip" size="10px" />
                       </div>
                       <div
                         class="picker-result"
-                        :style="{'background-color': textStyle.chordsColor}"
-                      >&nbsp;</div>
+                        :style="{ 'background-color': songLocalSettings.textStyle.chordsColor }"
+                      >
+                        &nbsp;
+                      </div>
                       <q-popup-proxy>
-                        <q-color v-model=" textStyle.chordsColor" format-model="hexa" />
+                        <q-color
+                          v-model="songLocalSettings.textStyle.chordsColor"
+                          format-model="hexa"
+                        />
                       </q-popup-proxy>
                     </q-btn>
                   </q-btn-group>
@@ -293,19 +297,19 @@
             <q-card flat>
               <q-card-section class="text-center">
                 <q-btn-toggle
-                  v-model="sections[selectedSection].type"
+                  v-model="currentSong.sections[selectedSection].type"
                   size="sm"
                   push
                   flat
                   toggle-color="primary"
-                  v-if="sections[selectedSection] !== undefined"
+                  v-if="currentSong.sections[selectedSection] !== undefined"
                   :options="[
-                        {label: 'Verse', value: 'verse'},
-                        {label: 'Chorus', value: 'chorus'},
-                        {label: 'Pre-Chorus', value: 'prechorus'},
-                        {label: 'Bridge', value: 'bridge'},
-                        {label: 'Special', value: 'special'},
-                      ]"
+                    { label: 'Verse', value: 'verse' },
+                    { label: 'Chorus', value: 'chorus' },
+                    { label: 'Pre-Chorus', value: 'prechorus' },
+                    { label: 'Bridge', value: 'bridge' },
+                    { label: 'Special', value: 'special' }
+                  ]"
                 />
               </q-card-section>
               <q-card-section>
@@ -315,8 +319,8 @@
                   type="textarea"
                   placeholder="Enter text here"
                   class="nodrag"
-                  v-if="sections[selectedSection] !== undefined"
-                  v-model="sections[selectedSection].text"
+                  v-if="currentSong.sections[selectedSection] !== undefined"
+                  v-model="currentSong.sections[selectedSection].text"
                 />
               </q-card-section>
             </q-card>
@@ -324,17 +328,20 @@
           <q-tab-panel style="padding:0px" name="chords">
             <q-card
               flat
-              v-if="selectedSection !== null && sections.length>0 && sections[selectedSection] !== undefined"
+              v-if="
+                selectedSection !== null &&
+                  currentSong.sections.length > 0 &&
+                  currentSong.sections[selectedSection] !== undefined
+              "
             >
               <q-card-section>
                 <q-input
                   color="primary"
                   filled
-                  @input.prevent
                   type="textarea"
                   placeholder="Enter chords here"
-                  v-if="sections[selectedSection] !== undefined"
-                  v-model="sections[selectedSection].chords"
+                  v-if="currentSong.sections[selectedSection] !== undefined"
+                  v-model="currentSong.sections[selectedSection].chords"
                   class="nodrag"
                 />
               </q-card-section>
@@ -362,8 +369,8 @@ export default {
     showChords: {
       default: true
     },
-    chordViewer:{
-      default:false
+    chordViewer: {
+      default: false
     }
   },
   mounted() {
@@ -421,95 +428,40 @@ export default {
 
       this.selectedSection = this.sections.length - 1;
     },
-    makeSelection(section, column) {
-      this.selectedSection = section;
-      this.selectedColumn = column;
+     moveSectionDown(section) {
+      this.songToEdit.sections.splice(
+        section + 1,
+        0,
+       this.songToEdit.sections.splice(section, 1)[0]
+      );
     },
-    removeSection(position, index, section) {
-      this.sections.splice(section, 1);
-      this.partPosition[position].splice(index, 1);
-      this.partPosition.forEach((column, index) => {
-        column.forEach((part, i) => {
-          if (part > section) {
-            this.partPosition[index][i] = part - 1;
-          }
-        });
-      });
+    moveSectionUp(section) {
+      this.songToEdit.sections.splice(
+        section - 1,
+        0,
+        this.songToEdit.sections.splice(section, 1)[0]
+      );
     },
-    addColumn() {
-      // this.sections.push({ text: "", chords: "", type: "verse" });
+    makeSelection(index) {
+      this.selectedSection = index;
 
-      this.partPosition.push([this.sections.length - 1]);
-      this.selectedColumn = this.partPosition.length - 1;
-      this.selectedSection = this.sections.length - 1;
     },
-    removeColumn(column, action) {
-      this.partPosition[column].forEach((section, index) => {
-        if (action === "left") {
-          this.partPosition[column - 1].push(section);
-        }
-        if (action === "remove") {
-          this.removeSection(column, section, index);
-        }
-      });
-      this.partPosition.splice(column, 1);
+    removeSection(section) {
+      this.songToEdit.sections.splice(section, 1);
     },
-    confirmRemove(index) {
-      this.$q.notify({
-        message: "Delete sections or move them to the right or left",
-        color: "negative",
-        icon: "fas fa-exclamation-triangle",
-        textColor: "white",
-        position: "center",
-        actions: [
-          {
-            label: "DELETE",
-            color: "yellow",
-            handler: () => this.removeColumn(index, "remove")
-          },
-          {
-            label: "MOVE LEFT",
-            color: "yellow",
-            handler: () => this.removeColumn(index, "left")
-          },
-          {
-            label: "Cancel",
-            color: "white",
-            handler: () => console.log("dismiss")
-          }
-        ]
-      });
-    },
+
+  
     selectSection(index) {
       this.selectedSection = index;
     },
-    moveSectionDown(column, section) {
-      this.partPosition[column].splice(
-        section + 1,
-        0,
-        this.partPosition[column].splice(section, 1)[0]
-      );
-    },
-    moveSectionUp(column, section) {
-      this.partPosition[column].splice(
-        section - 1,
-        0,
-        this.partPosition[column].splice(section, 1)[0]
-      );
-    },
-    moveSectionRight(column, section, index) {
-      this.partPosition[column].splice(index, 1);
-      this.partPosition[column + 1].push(section);
-    },
-    moveSectionLeft(column, section, index) {
-      console.log(section);
-      this.partPosition[column].splice(index, 1);
-      this.partPosition[column - 1].push(section);
-    },
+   
+  
     saveSong() {
       let song = {};
-      song.email = this.user.email;
-      song.organizationID = this.user.organizationID;
+  
+      if (this.songEdit === false) {
+            song.email = this.user.email;
+
       song.title = this.title || "";
       song.original_title = this.original_title || "";
       song.author = this.author || "";
@@ -517,8 +469,8 @@ export default {
       song.category = this.category || "";
       song.sections = this.sections;
       song.deleted = false;
-      if (this.songEdit === false) {
         this.$firestore
+          .collection('organizations').doc(this.user.organizationID)
           .collection("songs")
           .add(song)
           .then(docRef => {
@@ -530,14 +482,17 @@ export default {
         delete this.songid;
 
         this.$firestore
+         .collection('organizations').doc(this.user.organizationID)
           .collection("songs")
-          .doc(songid)
+          .doc(this.songToEdit.songid)
           .set(song, { merge: true });
       }
+      /*
       this.$store.dispatch("defaultModule/setSongPartPosition", {
         partPosition: this.partPosition,
         songID: this.songID
       });
+      */
       this.$store.dispatch("defaultModule/setSongTextStyle", {
         textStyle: this.textStyle,
         songID: this.songID
@@ -562,6 +517,12 @@ export default {
     }
   },
   computed: {
+     songs(){
+      return this.$parent.$parent.$parent.$parent.$parent.$data.songs
+    },
+    currentSong(){
+        return this.songs[this.songToEdit]
+    },
     user() {
       return {
         email: this.$store.getters["defaultModule/getEmail"],
@@ -572,7 +533,7 @@ export default {
       let localSettings = this.$store.getters[
         "defaultModule/getSongsLocalSettings"
       ];
-
+  console.log(localSettings)
       return {
         partPosition:
           localSettings[this.songID] !== undefined &&
@@ -583,7 +544,13 @@ export default {
           localSettings[this.songID] !== undefined &&
           localSettings[this.songID]["textStyle"] !== undefined
             ? localSettings[this.songID]["textStyle"]
-            : null
+            : {
+        size: 18,
+        chordsColor: "red",
+        textColor: "black",
+        textWeight: "normal",
+        chordsWeight: "bold"
+      }
       };
     }
   },

@@ -5,17 +5,10 @@ const routes = [
     component: () => import('layouts/Home.vue')
   },
   {
-    path: '/Login',
-    component: () => import('layouts/Blank.vue'),
+    path: '/slide',
+    component: () => import('pages/SlideWindow.vue'),
     children: [
-      { path: '', component: () => import('pages/Login.vue') }
-    ]
-  },
-  {
-    path: '/Preferences',
-    component: () => import('layouts/Blank.vue'),
-    children: [
-      { path: '', component: () => import('pages/Preferences.vue') }
+    
     ]
   },
   {
@@ -33,22 +26,25 @@ const routes = [
     ]
   },
   {
+    path: '/ViewEditSong/:songid/:edit',
+    component: () => import('layouts/Blank.vue'),
+    children: [
+      { path: '', component: () => import('pages/ViewEditSong.vue') }
+    ]
+  },
+  {
+    path: '/Vertical',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', component: () => import('pages/Vertical.vue') }
+    ]
+  },
+  {
     path: '/RenewLicense',
     component: () => import('layouts/Blank.vue'),
     children: [
       { path: '', component: () => import('pages/RenewLicense.vue') }
     ]
-  },
-  {
-    path: '/SetServer',
-    component: () => import('layouts/Blank.vue'),
-    children: [
-      { path: '' ,component: () => import('pages/SetServer.vue') }
-    ]
-  },
-  {
-    path: '/FirstConfig',
-    component: () => import('layouts/FirstConfig.vue')
   }
 ]
 

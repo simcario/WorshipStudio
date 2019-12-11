@@ -1,0 +1,28 @@
+
+export default {
+    add_to_playlist:'Aggiungi alla Playlist',
+    cancel:'Annulla',
+    choose_pad:'Scegli Pad',
+    cloud_playlists:'Cloud Playlists',
+    created_by:'Creato Da',
+    delete:'Elimina',
+    delete_song_confirm:'Sei sicuro di voler eliminare la canzone?',
+    edit:'Modifica',
+    file_audio:'File Audio',
+    library:'Libreria',
+    loading_songs:'Caricamento Canzoni...',
+    login_and_register:'Login e Registra',
+    new_song:'Nuova Canzone',
+    new_template:'Nuovo Template',
+    open:'Apri...',
+    register_software:'Registra Software',
+    save_loop_region:'Salva regione di loop',
+    save_playlist:'Salva Playlist',
+    search:'Cerca',
+    synchronization:'Sincronizzazione...',
+    synchronization_completed:'Sincronizzazione Completata!',
+    toggle_black:'Pulisci Schermo',
+    toggle_slide_window:'Mostra/Nascondi Slide',
+    toggle_text:'Mostra/Nascondi Testo',
+  }
+  

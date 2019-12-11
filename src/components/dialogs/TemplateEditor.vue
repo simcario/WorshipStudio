@@ -1,8 +1,13 @@
 <template>
-  <q-dialog v-model="open" persistent transition-show="flip-down" transition-hide="flip-up">
+  <q-dialog
+    v-model="open"
+    persistent
+    transition-show="flip-down"
+    transition-hide="flip-up"
+  >
     <q-card style="min-width:900px">
       <q-bar>
-        {{scope==='new' ? 'New' : 'Edit'}} Template
+        {{ scope === "new" ? "New" : "Edit" }} Template
         <q-space />
         <q-btn dense flat icon="close" @click="closePupup()">
           <q-tooltip content-class="bg-white text-primary">Close</q-tooltip>
@@ -25,7 +30,12 @@
             <div class="col-6 q-pa-xs">
               <div class="row">
                 <div class="col-12">
-                  <q-input filled dense label="Template Name" v-model="templateName"></q-input>
+                  <q-input
+                    filled
+                    dense
+                    label="Template Name"
+                    v-model="templateName"
+                  ></q-input>
                 </div>
 
                 <div class="col-12">
@@ -46,7 +56,7 @@
                     <!-- Background Color Button -->
                     <q-btn
                       dark
-                      :style="{background: '#DDDDDD'}"
+                      :style="{ background: '#DDDDDD' }"
                       text-color="purple"
                       lossy
                       unelevated
@@ -57,10 +67,15 @@
 
                       <div
                         class="picker-result"
-                        :style="{'background-color': backgroundColor}"
-                      >&nbsp;</div>
+                        :style="{ 'background-color': backgroundColor }"
+                      >
+                        &nbsp;
+                      </div>
                       <q-popup-proxy>
-                        <q-color v-model="backgroundColor" format-model="hexa" />
+                        <q-color
+                          v-model="backgroundColor"
+                          format-model="hexa"
+                        />
                       </q-popup-proxy>
                     </q-btn>
                   </q-btn-group>
@@ -68,7 +83,7 @@
                     <!--Font ColorButton -->
                     <q-btn
                       dark
-                      :style="{background: '#DDDDDD'}"
+                      :style="{ background: '#DDDDDD' }"
                       text-color="purple"
                       lossy
                       unelevated
@@ -81,8 +96,10 @@
                       </div>
                       <div
                         class="picker-result"
-                        :style="{'background-color': textColor}"
-                      >&nbsp;</div>
+                        :style="{ 'background-color': textColor }"
+                      >
+                        &nbsp;
+                      </div>
                       <q-popup-proxy>
                         <q-color v-model="textColor" format-model="hexa" />
                       </q-popup-proxy>
@@ -90,7 +107,7 @@
                     <!-- Text Background Button -->
                     <q-btn
                       dark
-                      :style="{background: '#DDDDDD'}"
+                      :style="{ background: '#DDDDDD' }"
                       text-color="purple"
                       lossy
                       unelevated
@@ -103,15 +120,17 @@
                       </div>
                       <div
                         class="picker-result"
-                        :style="{'background-color': textBackground}"
-                      >&nbsp;</div>
+                        :style="{ 'background-color': textBackground }"
+                      >
+                        &nbsp;
+                      </div>
                       <q-popup-proxy>
                         <q-color v-model="textBackground" format-model="hexa" />
                       </q-popup-proxy>
                     </q-btn>
                     <q-btn
                       dark
-                      :style="{background: '#DDDDDD'}"
+                      :style="{ background: '#DDDDDD' }"
                       text-color="purple"
                       lossy
                       unelevated
@@ -124,8 +143,10 @@
                       </div>
                       <div
                         class="picker-result"
-                        :style="{'background-color': textBoxColor}"
-                      >&nbsp;</div>
+                        :style="{ 'background-color': textBoxColor }"
+                      >
+                        &nbsp;
+                      </div>
                       <q-popup-proxy>
                         <q-color v-model="textBoxColor" format-model="hexa" />
                       </q-popup-proxy>
@@ -216,16 +237,13 @@ export default {
     },
     templateProps: {
       default: null
-    },
+    }
   },
   mounted() {
-    
-   
-
     this.$renderer.on("choose-background", (event, data) => {
       const filePath = data.filePath.replace(/\\/g, "/");
-    
-      this.template.filePath = filePath;
+
+      this.filePath = filePath;
     });
   },
   data() {
@@ -265,32 +283,33 @@ export default {
         "lightSpeed"
       ],
 
-          id: null,
-          templateName: null,
-          filePath: null,
-          backgroundColor: "black",
-          textColor: "white",
-          textAlign: "flex-center",
-          textBackground: "transparent",
-          textBoxColor: "transparent",
-          textShadow: "black",
-          transition: "fade",
-          valign: "center"
+      _id: null,
+      _rev: null,
+      templateName: null,
+      filePath: null,
+      backgroundColor: "black",
+      textColor: "white",
+      textAlign: "flex-center",
+      textBackground: "transparent",
+      textBoxColor: "transparent",
+      textShadow: "black",
+      transition: "fade",
+      valign: "center"
     };
   },
   methods: {
     closePupup() {
-       this.id= null;
-          this.templateName=null;
-          this.filePath= null;
-          this.backgroundColor= "black";
-          this.textColor= "white";
-          this.textAlign="flex-center";
-          this.textBackground="transparent"
-          this.textBoxColor= "transparent"
-          this.textShadow= "black"
-          this.transition="fade";
-         this.valign = "center"
+      (this._id = null), (this._rev = null);
+      this.templateName = null;
+      this.filePath = null;
+      this.backgroundColor = "black";
+      this.textColor = "white";
+      this.textAlign = "flex-center";
+      this.textBackground = "transparent";
+      this.textBoxColor = "transparent";
+      this.textShadow = "black";
+      this.transition = "fade";
+      this.valign = "center";
       this.$root.$emit("close-template-editor");
     },
     chooseBackground() {
@@ -307,56 +326,47 @@ export default {
       });
     },
     saveTemplate() {
-      this.id = this.templateID;
-
-      this.$store
-        .dispatch("defaultModule/saveSlideTemplate",this.templateProperties)
-        .then(
-          
-          this.closePupup()
-        );
+      this.$pouchApp.post(this.templateProperties).then(doc => {
+        console.log("Template Saved", doc);
+        this.closePupup();
+      });
     }
   },
   computed: {
-    templateID() {
-      if (this.id === null) {
-        return uniqid("template-");
-      } else {
-        return this.id;
-      }
-    },
-    templateProperties(){
+    templateProperties() {
       return {
-            id:this.id,
-            templateName: this.templateName,
-            filePath: this.filePath,
-            backgroundColor: this.backgroundColor,
-            textColor: this.textColor,
-            textAlign: this.textAlign,
-            textBackground: this.textBackground,
-            textBoxColor: this.textBoxColor,
-            textShadow: this.textShadow,
-            transition: this.transition,
-            valign: this.valign
-          }
+        objectType: "slideTemplate",
+        templateName: this.templateName,
+        filePath: this.filePath,
+        backgroundColor: this.backgroundColor,
+        textColor: this.textColor,
+        textAlign: this.textAlign,
+        textBackground: this.textBackground,
+        textBoxColor: this.textBoxColor,
+        textShadow: this.textShadow,
+        transition: this.transition,
+        valign: this.valign,
+        _id:this._id,
+        _rev:this._rev
+      };
     }
-
   },
-  watch:{
-    open(){
-       if(this.templateProps !== null){
-          this.id= this.templateProps.id;
-          this.templateName= this.templateProps.templateName;
-          this.filePath= this.templateProps.filePath;
-          this.backgroundColor= this.templateProps.backgroundColor;
-          this.textColor= this.templateProps.textColor;
-          this.textAlign= this.templateProps.textAlign;
-          this.textBackground=this.templateProps.textBackground;
-          this.textBoxColor= this.templateProps.textBoxColor;
-          this.textShadow= this.templateProps.textShadow;
-          this.transition= this.templateProps.transition;
-         this.valign = this.templateProps.valign
-    }
+  watch: {
+    open() {
+      if (this.templateProps !== null) {
+        this.templateName = this.templateProps.templateName;
+        this.filePath = this.templateProps.filePath;
+        this.backgroundColor = this.templateProps.backgroundColor;
+        this.textColor = this.templateProps.textColor;
+        this.textAlign = this.templateProps.textAlign;
+        this.textBackground = this.templateProps.textBackground;
+        this.textBoxColor = this.templateProps.textBoxColor;
+        this.textShadow = this.templateProps.textShadow;
+        this.transition = this.templateProps.transition;
+        this.valign = this.templateProps.valign;
+        this._id = this.templateProps._id;
+        this._rev = this.templateProps._rev;
+      }
     }
   }
 };

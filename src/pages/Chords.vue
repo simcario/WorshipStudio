@@ -1,23 +1,14 @@
 <template>
   <q-page>
-    <NewSongDialog
-      :show="newSongDialog"
-      :songEdit="songEdit"
-      :songToEdit="songToEdit"
-      :chordViewer="ChordViewer"
-    />
-    <!--<ChordViewer :showChords="moduleSettings.showChords" :show="ChordViewer" />-->
-    <LeftDrawer />
-
     <div class="q-pa-xs main-bg" style="height:100vh">
       <splitpanes class="default-theme" style="height: 88vh">
         <pane size="25">
           <splitpanes horizontal>
             <pane size="20">
               <q-card dark style="text-align:center;" class="bg-grey-9">
-                <q-bar dense class="bg-grey-10">PAD Player</q-bar>
-                <q-card-section v-if="wave!==null">
-                  <marquee direction="left">{{waveName}}</marquee>
+                <q-bar dense class="bg-grey-10">PAD Player </q-bar>
+                <q-card-section v-if="wave !== null">
+                  <marquee direction="left">{{ waveTitle }}</marquee>
                 </q-card-section>
                 <q-card-section style="padding:0px">
                   <div id="waveform"></div>
@@ -30,22 +21,37 @@
                 <q-menu touch-position context-menu>
                   <!-- Context Menu -->
                   <q-list dense style="min-width: 100px">
-                    <q-item clickable v-close-popup @click="setPad()" :disable="currentSong===null">
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="setPad()"
+                      :disable="currentSong === null"
+                    >
                       <q-item-section avatar>
-                        <q-icon size="16px" name="fas fa-file-import" />
+                        <q-icon size="16px" name="fas fa-retweet" />
                       </q-item-section>
-                      <q-item-section>Apply to song</q-item-section>
+                      <q-item-section>{{
+                        $t("save_loop_region")
+                      }}</q-item-section>
                     </q-item>
                   </q-list>
                 </q-menu>
               </q-card>
-              <!-- Pad Player -->
-            </pane>
+              <!-- Pad Player --> </pane
+            ><!-- Pad Player Pane -->
             <pane size="40" style="display:flex">
               <q-card dark class="bg-grey-9" style="width:100%">
-                <q-bar dense class="bg-grey-10">Library</q-bar>
-                <q-card-section style="height:43px ;padding:0px;overflow:hidden">
-                  <q-input filled dense dark label="Search" v-model="searchText">
+                <q-bar dense class="bg-grey-10">{{ $t("library") }}</q-bar>
+                <q-card-section
+                  style="height:43px ;padding:0px;overflow:hidden"
+                >
+                  <q-input
+                    filled
+                    dense
+                    dark
+                    :label="$t('search')"
+                    v-model="searchText"
+                  >
                     <template v-slot:prepend>
                       <q-icon name="fas fa-search" />
                     </template>
@@ -54,70 +60,107 @@
                     </template>
                   </q-input>
                 </q-card-section>
-                <q-card-section class="scroll" style="height:70% ;padding:0px;overflow-y:scroll">
+                <q-card-section
+                  class="scroll"
+                  style="height:70% ;padding:0px;overflow-y:scroll"
+                >
                   <q-list dense>
-                    <div v-for="(song,index) in songList" :key="index">
+                    <div v-for="(song, index) in songs" :key="index">
                       <q-item
                         clickable
                         v-ripple
-                        :active="song.songid === currentSong"
+                        :active="song._id === currentSong"
                         active-class="bg-grey-8 text-white"
                         style="padding: 0px 16px;"
-                        @click="openSong(song.songid)"
-                        @dblclick="openFullScreen(song)"
+                        @click="openSong(song._id)"
+                        @dblclick="openFullScreen(song._id, false)"
                       >
                         <q-menu touch-position context-menu>
                           <!-- Context Menu -->
                           <q-list dense style="min-width: 100px">
-                            <q-item clickable v-close-popup @click="openSong(song.songid)">
+                            <q-item
+                              clickable
+                              v-close-popup
+                              @click="openFullScreen(song._id, false)"
+                            >
                               <q-item-section avatar>
-                                <q-icon size="16px" name="fas fa-external-link-alt" />
+                                <q-icon
+                                  size="16px"
+                                  name="fas fa-external-link-alt"
+                                />
                               </q-item-section>
-                              <q-item-section>Open...</q-item-section>
+                              <q-item-section>{{ $t("open") }}</q-item-section>
                             </q-item>
-                            <q-item clickable v-close-popup @click="editSong(song)">
+                            <q-item
+                              clickable
+                              v-close-popup
+                              @click="openFullScreen(song._id, true)"
+                            >
                               <q-item-section avatar>
                                 <q-icon size="16px" name="fas fa-edit" />
                               </q-item-section>
-                              <q-item-section>Edit</q-item-section>
+                              <q-item-section>{{ $t("edit") }}</q-item-section>
                             </q-item>
-                            <q-item clickable v-close-popup @click="openDeleteDialog(song.songid)">
+                            <q-item
+                              clickable
+                              v-close-popup
+                              @click="openDeleteDialog(song)"
+                            >
                               <q-item-section avatar>
                                 <q-icon size="16px" name="fas fa-trash-alt" />
                               </q-item-section>
-                              <q-item-section>Delete</q-item-section>
+                              <q-item-section>{{
+                                $t("delete")
+                              }}</q-item-section>
                             </q-item>
                             <q-separator />
-                            <q-item clickable v-close-popup @click="$ws.addToPlaylist(song.songid)">
+                            <q-item
+                              clickable
+                              v-close-popup
+                              @click="openPad(song._id)"
+                            >
+                              <q-item-section avatar>
+                                <q-icon size="16px" name="fas fa-volume-off" />
+                              </q-item-section>
+                              <q-item-section>{{
+                                $t("choose_pad")
+                              }}</q-item-section>
+                            </q-item>
+                            <q-separator />
+                            <q-item
+                              clickable
+                              v-close-popup
+                              @click="$root.$emit('add-to-playlist', song._id)"
+                            >
                               <q-item-section avatar>
                                 <q-icon size="16px" name="fas fa-list" />
                               </q-item-section>
-                              <q-item-section>Add to Playlist</q-item-section>
+                              <q-item-section>{{
+                                $t("add_to_playlist")
+                              }}</q-item-section>
                             </q-item>
                           </q-list>
                         </q-menu>
-                        <q-item-section @dblclick="openSongFull(song)">
-                          <q-item-label style="font-weight:bold">{{song.title}}</q-item-label>
-                          <q-item-label caption class="text-white">{{song.author}}</q-item-label>
+                        <q-item-section>
+                          <q-item-label style="font-weight:bold">{{
+                            song.title
+                          }}</q-item-label>
+                          <q-item-label caption class="text-white">{{
+                            song.author
+                          }}</q-item-label>
                         </q-item-section>
                         <q-item-section top side class="text-white">
-                          {{song.number}}
-                          <br />
-                          <q-icon
-                            flat
-                            name="fas fa-volume-off"
-                            size="12px"
-                            v-show="songsSettings[song.songid] !== undefined && songsSettings[song.songid].pad !== undefined"
-                          />
+                          {{ song.number }}
                         </q-item-section>
                       </q-item>
-                      <q-separator v-if="index < songs.length-1" />
+                      <q-separator v-if="index < songs.length - 1" />
                     </div>
                   </q-list>
                 </q-card-section>
               </q-card>
               <!-- Library-->
             </pane>
+            <!-- Library Pane -->
             <pane style="display:flex">
               <q-card class="bg-grey-9 fill" style="width:100%">
                 <q-tabs
@@ -129,15 +172,23 @@
                   <q-tab name="currentPlaylist" label="Playlist" />
                   <q-tab name="cloudPlaylists" label="Cloud Playlists">
                     <q-badge
-                      v-show="cloudPlaylists.length>0"
+                      v-show="cloudPlaylists.length > 0"
                       color="red"
                       floating
-                    >{{cloudPlaylists.length}}</q-badge>
+                      >{{ cloudPlaylists.length }}</q-badge
+                    >
                   </q-tab>
                 </q-tabs>
-                <q-tab-panels v-model="activeTab" class="bg-grey-9" style="height:70%">
+                <q-tab-panels
+                  v-model="activeTab"
+                  class="bg-grey-9"
+                  style="height:70%"
+                >
                   <!--Playlist -->
-                  <q-tab-panel name="currentPlaylist" style="padding:0px; overflow-y:auto">
+                  <q-tab-panel
+                    name="currentPlaylist"
+                    style="padding:0px; overflow-y:auto"
+                  >
                     <q-list dark class="bg-grey-9">
                       <draggable
                         class="list-group bg-grey-9"
@@ -145,7 +196,10 @@
                         v-model="playlist.items"
                         @end="$ws.updatePlaylist(playlist)"
                       >
-                        <div v-for="(song,index) in playlist.items" :key="index">
+                        <div
+                          v-for="(song, index) in playlist.items"
+                          :key="index"
+                        >
                           <q-item
                             clickable
                             v-ripple
@@ -153,7 +207,7 @@
                             active-class="bg-grey-8 text-white"
                             style="padding: 0px 16px;"
                             @click="openPlaylistSong(index)"
-                            v-if="allSongs[song] !== undefined"
+                            v-if="selectedSong !== undefined"
                           >
                             <q-menu touch-position context-menu>
                               <!-- Context Menu -->
@@ -171,21 +225,28 @@
                               </q-list>
                             </q-menu>
                             <q-item-section>
-                              <div>{{allSongs[song].title}}</div>
+                              <div>{{ selectedSong.title }}</div>
                             </q-item-section>
-                            <q-item-label caption>{{allSongs[song].author}}</q-item-label>
+                            <q-item-label caption>{{
+                              selectedSong.author
+                            }}</q-item-label>
                             <q-item-section top side class="text-white">
-                              {{allSongs[song].number}}
+                              {{ selectedSong.number }}
                               <br />
                               <q-icon
                                 flat
                                 name="fas fa-volume-off"
                                 size="12px"
-                                v-show="songsSettings[song] !== undefined && songsSettings[song].pad !== undefined"
+                                v-show="
+                                  songsSettings[song] !== undefined &&
+                                    songsSettings[song].pad !== undefined
+                                "
                               />
                             </q-item-section>
                           </q-item>
-                          <q-separator v-if="index < playlist.items.length-1" />
+                          <q-separator
+                            v-if="index < playlist.items.length - 1"
+                          />
                         </div>
                       </draggable>
                     </q-list>
@@ -193,11 +254,19 @@
                   <q-tab-panel name="cloudPlaylists" class="q-pa-none">
                     <q-list dark>
                       <div v-for="(pl, index) in cloudPlaylists" :key="index">
-                        <q-item clickable v-ripple @dblclick="$ws.loadCloudPlaylist(pl)">
+                        <q-item
+                          clickable
+                          v-ripple
+                          @dblclick="$ws.loadCloudPlaylist(pl)"
+                        >
                           <q-menu touch-position context-menu>
                             <!-- Context Menu -->
                             <q-list dense style="min-width: 100px">
-                              <q-item clickable v-close-popup @click="removeCloudPlaylist(pl.id) ">
+                              <q-item
+                                clickable
+                                v-close-popup
+                                @click="removeCloudPlaylist(pl.id)"
+                              >
                                 <q-item-section avatar>
                                   <q-icon size="16px" name="fas fa-trash-alt" />
                                 </q-item-section>
@@ -206,14 +275,14 @@
                             </q-list>
                           </q-menu>
                           <q-item-section>
-                            <q-item-label>{{pl.title}}</q-item-label>
+                            <q-item-label>{{ pl.name }}</q-item-label>
                             <q-item-label caption>
-                              Created by
-                              <strong>{{pl.createdBy}}</strong>
+                              {{ $t("created_by") }}
+                              <strong>{{ pl.createdBy }}</strong>
                             </q-item-label>
                           </q-item-section>
                         </q-item>
-                        <q-separator v-if="index < cloudPlaylists.length-1" />
+                        <q-separator v-if="index < cloudPlaylists.length - 1" />
                       </div>
                     </q-list>
                   </q-tab-panel>
@@ -224,51 +293,52 @@
                     round
                     icon="fas fa-save"
                     color="white"
-                    @click="playListNameDialog=true"
+                    @click="playListNameDialog = true"
                   >
-                    <q-tooltip>Save Playlist</q-tooltip>
+                    <q-tooltip>{{ $t("save_playlist") }}</q-tooltip>
                   </q-btn>
                 </q-bar>
               </q-card>
               <!-- Playlists and Cloud -->
             </pane>
+            <!-- Playlist Pane -->
           </splitpanes>
         </pane>
         <pane size="75">
-          <q-card style="height:88vh; overflow-y:auto">
-            <q-card-section v-if="selectedSong !== undefined">
-              <div class="column">
+          <q-card style="height:88vh; overflow-y:scroll">
+            <q-card-section v-if="currentSong !== null">
+              <div class="column" style="height:88vh; ">
                 <div
-                  class="col"
-                  style="padding-left:20px; "
-                  v-for="(column,index) in partPosition"
+                  class="col-auto  q-pb-md"
+                  style="margin:0px"
+                  v-for="(section, index) in selectedSong.sections"
                   :key="index"
                 >
-                  <div v-for="(section, i) in column" :key="i" class="sectionContainer">
-                    <div
-                      :style="{
-                            'white-space': 'pre-line', 
-                            'color':textStyle.chordsColor, 
-                            'font-size': textStyle.size + 'px',
-                             'font-weight': textStyle.chordsWeight,
-                            'line-height': textStyle.size*2.2 + 'px',
-                            'position': 'absolute',
-                            }"
-                      v-if="selectedSong.sections[section] !== undefined"
-                    >{{transposedChords(selectedSong.sections[section].chords)}}</div>
-                    <div
-                      :style="{
-                            'white-space': 'pre-line', 
-                            'color':textStyle.textColor, 
-                            'font-size': textStyle.size + 'px',
-                            'font-weight': textStyle.textWeight,
-                            'padding-top': textStyle.size + 'px',
-                            'line-height': textStyle.size*2.2 + 'px',
- 
-                            }"
-                      v-if="selectedSong.sections[section] !== undefined"
-                      editable="true"
-                    >{{selectedSong.sections[section].text}}</div>
+                  <div
+                    :style="{
+                      'white-space': 'pre-line',
+                      color: textStyle.chordsColor,
+                      'font-size': textStyle.size + 'px',
+                      'font-weight': textStyle.chordsWeight,
+                      'line-height': textStyle.size * 2.2 + 'px',
+                      position: 'absolute'
+                    }"
+                    v-if="section !== undefined"
+                  >
+                    {{ transposeChords[index] }}
+                  </div>
+                  <div
+                    :style="{
+                      'white-space': 'pre-line',
+                      color: textStyle.textColor,
+                      'font-size': textStyle.size + 'px',
+                      'font-weight': textStyle.textWeight,
+                      'padding-top': textStyle.size + 'px',
+                      'line-height': textStyle.size * 2.2 + 'px'
+                    }"
+                    editable="true"
+                  >
+                    {{ section.text }}
                   </div>
                 </div>
               </div>
@@ -278,12 +348,18 @@
         </pane>
       </splitpanes>
     </div>
+
     <q-dialog v-model="playListNameDialog">
       <q-card style="min-width: 250px" class="bg-grey-8">
         <q-bar>Save Playlist</q-bar>
-        <q-input dark dense v-model="currentPlaylistTitle" label="Playlist Title"></q-input>
+        <q-input
+          dark
+          dense
+          v-model="currentPlaylistTitle"
+          label="Playlist Title"
+        ></q-input>
         <q-card-actions>
-          <q-btn color="primary" @click="$ws.savePlaylist(playlist, currentPlaylistTitle)">SAVE</q-btn>
+          <q-btn color="primary" @click="savePlaylist()">SAVE</q-btn>
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -317,24 +393,16 @@ export default {
     ChordViewer,
     LeftDrawer
   },
+    created(){
+      document.addEventListener("keypress", this.bindKey);
+  },
+  destroyed(){
+      document.removeEventListener("keypress", this.bindKey);
+  },
   mounted() {
-    window.addEventListener("keypress", this.bindKey);
-
+    this.reloadSongs();
+    this.$renderer.send("close-slide-window");
     this.getCloudPlaylists();
-    this.$root.$on("editSong", song => {
-      this.songEdit = true;
-      this.newSongDialog = true;
-    });
-    this.$root.$on("closeEditor", refresh => {
-      this.newSongDialog = false;
-      this.ChordViewer = false;
-      if (refresh === true) {
-        this.reloadSongs();
-      }
-    });
-    this.$root.$on("new-song", () => {
-      this.newSong();
-    });
     this.$root.$on("set-pad", name => {
       if (this.currentSong !== null) {
         this.$store.dispatch("defaultModule/setSongPad", {
@@ -345,69 +413,87 @@ export default {
     });
     this.$root.$on("open-pad", name => {
       this.padLoading = true;
-
       this.waveName = name;
     });
     this.$renderer.send("send-me-files");
-    this.$renderer.on("library-folders", (e, folders) => {
-      this.libraryFolders = folders;
+    this.$renderer.on("choose-pad", (e, data) => {
+      this.$pouchSongsPref
+        .find({
+          selector: { songID: this.currentSong }
+        })
+        .then(res => {
+          if (res.docs.length === 0) {
+            this.$pouchSongsPref
+              .post({
+                songID: data.data,
+                fileName: data.filePath
+              })
+              .then(doc => {
+              
+                this.applyWave({
+                  fileName: data.filePath
+                });
+              });
+          }
+        });
     });
+
     this.$bus.$on("loading", loading => {
       this.loading = loading;
     });
-    this.$root.$on("closeChordViewer", () => {
-      this.ChordViewer = false;
-    });
-    this.$renderer.on("song", evt => {
-      this.ChordViewer = true;
-    });
-    this.reloadSongs();
-    this.$renderer.send("get-playlist");
 
-    this.$renderer.on("playlist-data", (evt, playlist) => {
-      this.playlist = playlist;
-    });
-
-    this.$renderer.on("F5", evt => {
-      this.playlistSong(0);
-    });
-    this.$renderer.on("pagedown", evt => {
-      this.nextSong();
-    });
-    this.$renderer.on("pageup", evt => {
-      this.prevSong();
-    });
+    
+  },
+  sockets: {
+    connect: function() {
+      console.log("socket connected from chords");
+    },
+    openSong: function(data) {
+      console.log("SOCKET FULL SCREEN");
+      if (this.link === true) {
+        this.$q.notify({
+          message: data.name + " has selected current song!",
+          position: "center"
+        });
+        this.openFullScreen(data.id, false);
+      }
+    }
   },
   data() {
     return {
       w: null,
       activeTab: "currentPlaylist",
       activeTab2: "slide-templates",
-      playListNameDialog: false,
+      allSongs: {},
       cloudPlaylists: [],
+      ChordViewer: false,
       currentPlaylistTitle: null,
       currentPlaylistSongIndex: 0,
       currentSong: null,
-      playlist: [],
+      currentSongRef: null,
+
+      loading: false,
+      newSongDialog: false,
+      padLoading: false,
+      playListNameDialog: false,
       searchText: "",
+      selectedSection: null,
       selectedSlideIndex: null,
       selectedPlaylistIndex: null,
+      selectedSong:null,
+      selectedTab: "info",
       selectedTemplate: null,
+      songs: {},
+      songEdit: false,
+      songNew: false,
       songParts: [],
+      songToEdit: {},
       wave: null,
       waveRegion: {},
       waveName: null,
-      songs: {},
-      allSongs: {},
-      songToEdit: null,
+      waveTitle: null,
       TemplateEditorDialog: false,
-      transpose: 0,
-      newSongDialog: false,
-      ChordViewer: false,
-      songEdit: false,
-      loading: false,
-      padLoading: false,
-      libraryFolders: {}
+      transpose: 0
     };
   },
   methods: {
@@ -435,82 +521,164 @@ export default {
         resolve(waversurfer);
       });
     },
-    setPad() {
-      Object.keys(this.wave.regions.list).forEach(region => {
-        let waveInfo = {
-          songID: this.currentSong,
-          fileName: this.waveName,
-          region: {
-            color: this.wave.regions.list[region].color,
-            start: this.wave.regions.list[region].start,
-            end: this.wave.regions.list[region].end,
-            loop: true
+    applyWave(pad) {
+      let padArray;
+      if (this.wave !== null) {
+        this.wave.stop();
+        this.wave.destroy();
+      }
+      this.openWave().then(wave => {
+        this.wave = wave;
+        this.wave.load(pad.fileName);
+        this.padLoading = true;
+        this.$bus.$emit("status", {
+          message: "Loading pad file ...",
+          color: "yellow",
+          textColor: "black"
+        });
+        this.wave.on("ready", () => {
+          this.$bus.$emit("status", {
+            message: "Pad file ready!"
+          });
+          this.padLoading = false;
+          console.log("WAVEFORM READY WATCHER");
+          this.wave.clearRegions();
+
+          if (pad.region !== undefined && pad.region !== null) {
+            console.log("waveName WATCHER not null");
+
+            this.wave.addRegion(pad.region);
+          } else {
+            console.log("waveName WATCHER NULL");
+            this.wave.addRegion({
+              start: 0,
+              end: this.wave.getDuration(),
+              color: "rgba(91, 96, 153, 0.21)",
+              loop: true
+            });
           }
+        });
+
+        this.wave.on("error", err => {
+          this.padLoading = false;
+          console.log(err);
+          this.$bus.$emit("status", {
+            message: "Pad not found",
+            color: "red"
+          });
+        });
+      });
+    },
+    openPad(songid) {
+      this.$renderer.send("select-file", {
+        title: this.$t("choose_pad"),
+        event: "choose-pad",
+        data: songid,
+        filters: [
+          {
+            name: this.$t("file_audio"),
+            extensions: ["mp3", "wav"]
+          }
+        ]
+      });
+    },
+    setPad() {
+      let record = this.currentSongRef;
+
+      Object.keys(this.wave.regions.list).forEach(regionk => {
+        record.region = {
+          color: this.wave.regions.list[regionk].color,
+          start: this.wave.regions.list[regionk].start,
+          end: this.wave.regions.list[regionk].end,
+          loop: true
         };
-        console.log(waveInfo);
-        this.$store.dispatch("defaultModule/setSongPad", waveInfo);
+        this.$pouchSongsPref.put(record);
       });
     },
     bindKey(e) {
-
       if (e.keyCode === 112) {
         if (this.wave !== null) {
           this.wave.playPause();
         }
       }
       if (e.keyCode === 43) {
-        this.transpose++
-        this.$ws.createAlert('Transpose ' + this.transpose)
+        this.transpose++;
+        this.$ws.createAlert("Transpose " + this.transpose);
       }
-       if (e.keyCode === 45) {
-        this.transpose--
-        this.$ws.createAlert('Transpose ' + this.transpose)
+      if (e.keyCode === 45) {
+        this.transpose--;
+        this.$ws.createAlert("Transpose " + this.transpose);
       }
     },
     clearText() {
       this.searchText = "";
-      this.$ws.allSongs().then(songs => (this.songs = songs));
+      this.$ws.allSongs("").then(songs => (this.songs = songs));
     },
     reloadSongs() {
-      this.$ws.allSongs().then(songs => {
+      this.$ws.allSongs("").then(songs => {
         this.songs = songs;
-        this.allSongs = songs;
       });
-    },
-    newSong() {
-      this.songEdit = false;
-      this.$root.$emit("newSong");
-      this.newSongDialog = true;
-      this.songToEdit = null;
     },
     openSong(id) {
       this.selectedSlideIndex = null;
       this.currentSong = id;
-      let song = this.songs[id];
-    },
-    openSongFull(song) {
-      this.$renderer.send("song", song);
-      //this.$root.$emit("song", song)
     },
     editSong(song) {
-      this.$root.$emit("editSong", song);
+      this.songEdit = true;
+      this.songToEdit = JSON.parse(JSON.stringify(song));
 
-      this.songToEdit = song;
-    },
-    openFullScreen(song) {
       this.ChordViewer = true;
-      this.editSong(song);
+      this.currentSong = song.songid;
     },
-    filterSongs(filter) {
-      this.$ws.filterSongs(filter).then(songs => {
-        console.log("FILTERED", songs);
-        this.songs = songs;
+    saveSong() {
+      let song = {};
+      song = this.songToEdit;
+      if (this.songEdit === false) {
+        let searchref = song.title;
+
+        song.sections.forEach(section => {
+          searchref = searchref + " " + section.text;
+        });
+        song.searchref = searchref.toLowerCase();
+        song.organizationID = this.licenseInfo.licenseID;
+        song.email = this.licenseInfo.userEmail;
+        this.$pouchSongs
+          .post(song)
+          .then(doc => console.log("DOCUMENT INSERTED", doc));
+      } else {
+        this.$pouchSongs
+          .put(song)
+          .then(doc => console.log("DOCUMENT UPDATED", doc));
+      }
+
+      this.$root.$emit("reload-songs");
+      this.closeChordViewer();
+      this.$q.notify({
+        message: "Song was saved",
+        color: "positive"
       });
     },
+    openFullScreen(id, edit) {
+      this.$socket.emit("openSong", {
+        sector: this.licenseInfo.sector,
+        id: id,
+        name: this.preferences.computerName
+      });
+      let path = "ViewEditSong/" + id + "/" + edit;
+
+      this.$router.push({ path: path });
+      return;
+    },
+ 
     playlistSong(index) {
       this.currentPlaylistSongIndex = index;
-
-      this.openFullScreen(this.allSongs[this.playlist.items[index]]);
+   
+      this.$ws.getSong(this.playlist.items[index]).then(song=>{
+         this.openFullScreen(song._id, false);
+      })
+     
+     
+    
     },
     nextSong() {
       const index = this.currentPlaylistSongIndex + 1;
@@ -528,14 +696,25 @@ export default {
       let sections = [];
       this.selectedPlaylistIndex = index;
       this.currentSong = this.playlist.items[index];
-      console.log(this.playlist.items[index]);
-      this.openSong(this.currentSong);
+      this.$ws.getSong(this.playlist.items[index]).then(song=>{
+       this.openFullScreen(song._id, false);
+     })
+     
     },
     getCloudPlaylists() {
       this.cloudPlaylists = [];
       this.$ws.cloudPlaylists().then(playlists => {
         this.cloudPlaylists = playlists;
       });
+    },
+    savePlaylist() {
+      this.$ws
+        .savePlaylist(this.playlist, this.currentPlaylistTitle)
+        .then(id => {
+      
+          this.getCloudPlaylists();
+          this.playListNameDialog = false;
+        });
     },
     removeCloudPlaylist(id) {
       this.$q.notify({
@@ -556,163 +735,255 @@ export default {
       });
     },
 
-    transposedChords(chords) {
-      return this.$ws.transpose(
-        chords,
-        this.transpose,
-        this.selectedSong.notation
-      );
-    },
-    openDeleteDialog(songID) {
-      (this.deleteSongID = songID),
-        this.$q.notify({
-          message: "Are you sure you want to delete the song?",
-          color: "negative",
-          icon: "fas fa-exclamation-triangle",
-          textColor: "white",
-          position: "center",
-          actions: [
-            { label: "Yes", color: "yellow", handler: () => this.deleteSong() },
-            {
-              label: "Dismiss",
-              color: "white",
-              handler: () => console.log("dismiss")
-            }
-          ]
-        });
+     openDeleteDialog(song) {
+      this.$q.notify({
+        message: this.$t("delete_song_confirm"),
+        color: "negative",
+        icon: "fas fa-exclamation-triangle",
+        textColor: "white",
+        position: "center",
+        actions: [
+          {
+            label: "Yes",
+            color: "yellow",
+            handler: () => this.deleteSong(song)
+          },
+          {
+            label: "Dismiss",
+            color: "white",
+            handler: () => console.log("dismiss")
+          }
+        ]
+      });
       // this.alert=true
     },
-    deleteSong() {
-      this.$ws.deleteSong(this.deleteSongID).then(() => {
-        this.reloadSongs();
-      });
-    }
+
+  
   },
   computed: {
-    selectedSong() {
-      return this.songs[this.currentSong];
-    },
-    partPosition() {
-      if (!this.songLocalSettings.partPosition) {
-        let partPosition = [[]];
-        this.selectedSong.sections.forEach((section, index) => {
-          partPosition[0].push(index);
-        });
-        return partPosition;
-      } else {
-        return this.songLocalSettings.partPosition;
-      }
-    },
-    textStyle() {
-      if (!this.songLocalSettings.textStyle) {
-        return {
-          size: 18,
-          chordsColor: "red",
-          textColor: "black",
-          textWeight: "normal",
-          chordsWeight: "bold"
-        };
-      } else {
-        return this.songLocalSettings.textStyle;
-      }
-    },
-    pad() {
-      return this.songLocalSettings.pad || null;
-    },
-    songLocalSettings() {
-      let localSettings = this.$store.getters[
-        "defaultModule/getSongsLocalSettings"
-      ];
+    transposeChords() {
+      let parts = [];
+      this.selectedSong.sections.forEach(section => {
+        // Start Transpose
 
+        var txtChords = section.chords.toLowerCase();
+        const chords = {
+            anglo: {
+              c: ["c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"],
+              "c#": ["c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b", "c"],
+              db: ["db", "d", "eb", "e", "f", "gb", "g", "ab", "a", "bb", "b", "c"],
+              d: ["d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b", "c", "c#"],
+              "d#": ["d#", "e", "f", "f#", "g", "g#", "a", "a#", "b", "c", "c#", "d"],
+              eb: ["eb", "e", "f", "gb", "g", "ab", "a", "bb", "b", "c", "db", "d"],
+              e: ["e", "f", "f#", "g", "g#", "a", "a#", "b", "c", "c#", "d", "d#"],
+              f: ["f", "f#", "g", "g#", "a", "a#", "b", "c", "c#", "d", "d#", "e"],
+              "f#": ["f#", "g", "g#", "a", "a#", "b", "c", "c#", "d", "d#", "e", "f"],
+              gb: ["gb", "g", "ab", "a", "bb", "b", "c", "db", "d", "eb", "e", "f"],
+              g: ["g", "g#", "a", "a#", "b", "c", "c#", "d", "d#", "e", "f", "f#"],
+              "g#": ["g#", "a", "a#", "b", "c", "c#", "d", "d#", "e", "f", "f#", "g"],
+              ab: ["ab", "a", "bb", "b", "c", "db", "d", "eb", "e", "f", "gb", "g"],
+              a: ["a", "a#", "b", "c", "c#", "d", "d#", "e", "f", "f#", "g", "g#"],
+              "a#": ["a#", "b", "c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a"],
+              bb: ["bb", "b", "c", "db", "d", "eb", "e", "f", "gb", "g", "ab", "a"],
+              b: ["b", "c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#"]
+            },
+            latin: {
+              do:["do","do#","re","re#","mi","fa","fa#","sol","sol#","la","la#","si"],
+              "do#":["do#","re","re#","mi","fa","fa#","sol","sol#","la","la#","si","do"],
+              reb:["reb","re","mib","mi","fa","solb","sol","lab","la","sib","si","do"],
+              re:["re","re#","mi","fa","fa#","sol","sol#","la","la#","si","do","do#"],
+              "re#":["re#","mi","fa","fa#","sol","sol#","la","la#","si","do","do#","re"],
+              mib:["mib","mi","fa","solb","sol","lab","la","sib","si","do","reb","re"],
+              mi:["mi","fa","fa#","sol","sol#","la","la#","si","do","do#","re","re#"],
+              fa:["fa","fa#","sol","sol#","la","la#","si","do","do#","re","re#","mi"],
+              "fa#":["fa#","sol","sol#","la","la#","si","do","do#","re","re#","mi","fa"],
+              solb:["solb","sol","lab","la","sib","si","do","reb","re","mib","mi","fa"],
+              sol:["sol","sol#","la","la#","si","do","do#","re","re#","mi","fa","fa#"],
+              "sol#":["sol#","la","la#","si","do","do#","re","re#","mi","fa","fa#","sol"],
+              lab:["lab","la","sib","si","do","reb","re","mib","mi","fa","solb","sol"],
+              la:["la","la#","si","do","do#","re","re#","mi","fa","fa#","sol","sol#"],
+              "la#":["la#","si","do","do#","re","re#","mi","fa","fa#","sol","sol#","la"],
+              sib:["sib","si","do","reb","re","mib","mi","fa","solb","sol","lab","la"],
+              si:["si","do","do#","re","re#","mi","fa","fa#","sol","sol#","la","la#"]}
+          };
+        let configChords = chords[this.$config.notation];
+
+        const extensions = [
+          "m",
+          "m7",
+          "7",
+          "dim",
+          "sus4",
+          "sus9",
+          "9",
+          "11",
+          "13"
+        ];
+
+        const chordTranslate = {
+          anglo: {
+            do: "c",
+            "do#": "c#",
+            reb: "db",
+            re: "d",
+            "re#": "d#",
+            mib: "eb",
+            mi: "e",
+            fa: "f",
+            "fa#": "f#",
+            solb: "gb",
+            sol: "g",
+            "sol#": "g#",
+            lab: "ab",
+            la: "a",
+            "la#": "a#",
+            sib: "bb",
+            si: "b"
+          },
+          latin: {
+            c: "do",
+            "c#": "do#",
+            db: "reb",
+            d: "re",
+            "d#": "re#",
+            eb: "mib",
+            e: "mi",
+            f: "fa",
+            "f#": "fa#",
+            gb: "solb",
+            g: "sol",
+            "g#": "sol#",
+            ab: "lab",
+            a: "la",
+            "a#": "la#",
+            bb: "sib",
+            b: "si"
+          }
+        };
+
+        const lines = txtChords.split("\n");
+        let newline = "";
+        lines.forEach(line => {
+          const chords = line.split(" ");
+
+          chords.forEach(fullChord => {
+            if (fullChord === "") {
+              newline += "\xa0";
+            } else {
+              const chordParts = fullChord.split("/");
+
+              chordParts.forEach((chordPart, index) => {
+                let found = false;
+                let newChord;
+                let ext;
+                let chordExtension = false;
+                let chord;
+                extensions.forEach(extension => {
+                  if (
+                    chordPart.substr(chordPart.length - extension.length) ===
+                    extension
+                  ) {
+                    chord = chordPart.replace(extension, "");
+                    chordExtension = true;
+                    ext = extension;
+                  }
+                });
+
+                if (chordExtension === false) {
+                  chord = chordPart;
+                  ext = "";
+                }
+                let currentNotation;
+                if (chordTranslate.anglo[chord] !== undefined) {
+                  currentNotation = "latin";
+                } else {
+                  currentNotation = "anglo";
+                }
+
+                if (currentNotation !== this.$config.notation) {
+                  chord = chordTranslate[this.$config.notation][chord];
+                }
+                if (configChords[chord] !== undefined) {
+                  newChord = configChords[chord][this.transpose];
+                } else {
+                  if (currentNotation === "latin") {
+                    newChord = configChords["do"][this.transpose];
+                  } else {
+                    newChord = "{err}";
+                  }
+                }
+
+                newChord = newChord + ext;
+                newChord = newChord.charAt(0).toUpperCase() + newChord.slice(1);
+
+                newline += newChord;
+
+                if (chordParts.length > 1 && index === 0) {
+                  newline += "/";
+                }
+              });
+            }
+          });
+
+          newline += "\n";
+        });
+
+        parts.push(newline);
+      });
+      return parts;
+    },
+    licenseInfo() {
+      return this.$parent.$parent.$parent.$data.licenseInfo;
+    },
+    link() {
+      return this.$parent.$parent.$parent.$data.link;
+    },
+    preferences() {
+      return this.$parent.$parent.$parent.$data.preferences;
+    },
+    playlist() {
+      return this.$parent.$parent.$parent.$data.playlist;
+    },
+  
+
+    textStyle() {
       return {
-        partPosition:
-          localSettings[this.currentSong] !== undefined &&
-          localSettings[this.currentSong]["partPosition"] !== undefined
-            ? localSettings[this.currentSong]["partPosition"]
-            : null,
-        textStyle:
-          localSettings[this.currentSong] !== undefined &&
-          localSettings[this.currentSong]["textStyle"] !== undefined
-            ? localSettings[this.currentSong]["textStyle"]
-            : null,
-        pad:
-          localSettings[this.currentSong] !== undefined &&
-          localSettings[this.currentSong]["pad"] !== undefined
-            ? localSettings[this.currentSong]["pad"]
-            : null
+        size: 18,
+        chordsColor: "red",
+        textColor: "black",
+        textWeight: "normal",
+        chordsWeight: "bold"
       };
     },
 
-    songsSettings() {
-      return this.$store.getters["defaultModule/getSongsLocalSettings"];
-    },
-
-    moduleSettings() {
-      return this.$store.getters["defaultModule/getModuleChords"];
-    },
-    songList() {
-      return this.songs;
-    }
+  
   },
   watch: {
     searchText() {
-      this.$ws.filterSongs(this.searchText).then(ret => {
-        this.songs = ret;
+      this.$ws.allSongs(this.searchText).then(songs => {
+        this.songs = songs;
       });
     },
+    currentSong() {
+      this.$ws.getSong(this.currentSong).then(song=>{
+          return this.selectedSong = song
+        })
+      this.$pouchSongsPref
+        .find({
+          selector: { songID: this.currentSong }
+        })
+        .then(data => {
+          const pad = data.docs[0] !== undefined ? data.docs[0] : null;
+          this.currentSongRef = data.docs[0];
 
-    pad: {
-      deep: true,
-      handler() {
-        this.waveName = this.pad ? this.pad.filename : null;
-      }
-    },
-    waveName() {
-      // this.wave.destroy();
-      if (this.wave !== null) {
-        this.wave.stop();
-        this.wave.destroy();
-      }
-      this.openWave().then(wave => {
-        this.wave = wave;
-        this.wave.load(this.libraryFolders.pads + "/" + this.waveName);
-        this.padLoading = true;
-        this.$bus.$emit("status", {
-          message: "Loading pad file ...",
-          color: "yellow",
-          textColor: "black"
-        });
-        this.wave.on("ready", () => {
-          this.$bus.$emit("status", {
-            message: "Pad file ready!"
-          });
-          this.padLoading = false;
-          console.log("WAVEFORM READY WATCHER");
-          this.wave.clearRegions();
-
-          if (this.pad !== null) {
-            console.log("waveName WATCHER pad null");
-
-            this.wave.addRegion(this.pad.region);
-          } else {
-            this.wave.addRegion({
-              start: 0,
-              end: this.wave.getDuration(),
-              color: "rgba(91, 96, 153, 0.21)",
-              loop: true
-            });
+          if (pad !== null) {
+            if (this.wave !== null) {
+              this.wave.stop();
+              this.wave.destroy();
+            }
+            this.applyWave(pad);
           }
         });
-
-        this.wave.on("error", err => {
-          this.padLoading = false;
-          console.log(err);
-          this.$bus.$emit("status", {
-            message: "Pad not found",
-            color: "red"
-          });
-        });
-      });
     }
   }
 };
@@ -743,26 +1014,33 @@ export default {
   position: relative;
 }
 </style>
-<style >
+<style scoped>
 .songText {
-  color: #595959;
   font-size: 18px;
+  padding-top: 18px;
+  line-height: 39.6px;
 }
 .songChords {
   position: absolute;
-  white-space: pre;
+  font-size: 18px;
+  line-height: 39.6px;
+  color: red;
+  font-weight: bold;
+}
+.visibleBorders {
+  border: 1px dotted #dddddd;
 }
 .sectionContainer {
-  position: relative;
   /* margin-bottom: 15px; */
   border-radius: 5px;
 }
 .sectionContainer:hover {
   background-color: #eaf6ff;
+  border: 1px dotted red;
 }
 .selectedSection {
-  border: 1px dotted #dddddd;
   border-radius: 5px;
+  background-color: #eaf6ff;
 }
 .no-overflow {
   overflow: hidden;

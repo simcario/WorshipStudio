@@ -5,13 +5,13 @@
   >
     <transition :name="transitionName">
       <div
-        v-if="visible"
+        v-if="visible && black===false"
         class="text"
         :style="{'align-self':template.valign, 'background-color':template.textBackground,color:template.textColor, 'text-shadow':'2px 2px 2px black', border:'1px solid ' + template.textBoxColor}"
-        v-resize-text="{ratio:'1.8', minFontSize:'40px', maxFontSize:'70px', delay:200, }"
+        v-resize-text="{ratio:'1.8', minFontSize:'35px', maxFontSize:'65px', delay:200, }"
       >{{text}}</div>
     </transition>
-    <div class="background-container" :style="{'background-image':'url('+template.filePath+')'}">
+    <div class="background-container" :style="{'background-image':'url('+template.filePath+')'}" v-if="black===false">
       <div class="wrapper">
         <transition name="fade">
           <video
@@ -39,7 +39,13 @@ export default {
     });
 
     this.$renderer.on("black", (evt, status) => {
+      console.log("black",status)
       this.black = status;
+    });
+
+    this.$renderer.on("text", (evt, status) => {
+        console.log("text",status)
+      this.visible = status;
     });
   },
   props: {},
@@ -48,6 +54,7 @@ export default {
       video: null,
       visible: true,
       slide: null,
+      black:false,
       src: "",
       text: `Amazing Grace, How sweet the sound
 That saved a wretch like me
@@ -128,7 +135,7 @@ T'was blind but now I see`.toUpperCase(),
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 5px;
+
   padding: 3px;
   position: relative;
 }

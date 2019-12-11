@@ -1,27 +1,27 @@
-const express = require("express");
-const Store = require("electron-store");
-const store = new Store();
-const bodyParser = require("body-parser");
-const cors = require("cors");
-const url = require("url");
+//const express = require("express");
+//const Store = require("electron-store");
+//const store = new Store();
+//const bodyParser = require("body-parser");
+//const cors = require("cors");
+//const url = require("url");
 //const ip = require("ip");
-const swarm = require("discovery-swarm");
-const crypto = require("crypto");
-var songsController = require("../controllers/songs");
+//const swarm = require("discovery-swarm");
+//const crypto = require("crypto");
+//var songsController = require("../controllers/songs");
 
 const SimpleCrypto = require("simple-crypto-js").default;
-const server = express();
-var http = require("http").createServer(server);
-http.listen(7777)
+//const server = express();
+//var http = require("http").createServer(server);
+//http.listen(7777)
 
 const electron = require("electron");
 const shell = require('electron').shell;
-const PCName = store.get('pc-name') || 'COMPUTER'
+//const PCName = store.get('pc-name') || 'COMPUTER'
 const fs = require('fs')
-const chokidar = require('chokidar');
-const rootPath = require('electron-root-path').rootPath;
-var padsDir = rootPath.replace(/\\/g, "/") + '/Library/Pads';
-
+//const chokidar = require('chokidar');
+//const rootPath = require('electron-root-path').rootPath;
+//var padsDir = rootPath.replace(/\\/g, "/") + '/Library/Pads';
+/*
 try {
   if (!fs.existsSync(padsDir)) {
     fs.mkdirSync(padsDir, {
@@ -41,13 +41,7 @@ function readDir(dir){
     });
   })
 }
-
-
-chokidar.watch(padsDir).on('all', (event, path) => {
-  readDir(padsDir).then(items=>{
-    mainWindow.webContents.send('pad-folder', items)
-  })
-});
+*/
 
 
 
@@ -62,20 +56,22 @@ import {
 } from "electron";
 app.commandLine.appendSwitch('inspect', '5858')
 
-server.use(bodyParser.json());
-server.use(cors());
 
-const api = require("../routes/api");
+//server.use(bodyParser.json());
+//server.use(cors());
 
-server.use("/api", api);
-server.disable("etag");
+//const api = require("../routes/api");
 
+//server.use("/api", api);
+//server.disable("etag");
+/*
 server.get('/file/:name', (req, res) => {
   let filename = req.params.name
   res.sendFile(filename)
 
 
 })
+*/
 /*
 ws.scanNetwork().then(ips => {
   console.log(ips);
@@ -85,7 +81,7 @@ ws.scanNetwork().then(ips => {
 // Common Funcions
 
 //End Common Funcions
-
+/*
 let playlist = {
   id: null,
   title: null,
@@ -93,10 +89,10 @@ let playlist = {
   vreatedByEmail: null,
   items: []
 };
+*/
 
 
-
-
+/*
 function sendMessage(type, message) {
 
   for (let id in clients) {
@@ -110,13 +106,13 @@ function sendMessage(type, message) {
     );
   }
 }
+*/
 
+//let clients = {};
+//var connSeq = 0;
 
-let clients = {};
-var connSeq = 0;
-
-
-const myId = crypto.randomBytes(32);
+/*
+//const myId = crypto.randomBytes(32);
 const config = {
   id: myId + '{wsarray}' + PCName
 };
@@ -128,6 +124,7 @@ ipcMain.on("pc-name", (event, name) => {
   store.set('pc-name', name)
 
 });
+*/
 ipcMain.on('open-download-link', (evt) => {
   shell.openExternal("https://www.simonpietro.it/worshipstudio/downloads/WorshipStudio.exe");
   app.quit()
@@ -136,6 +133,7 @@ ipcMain.on('song', (event, song) => {
   // sendMessage('song', song)
   mainWindow.webContents.send('song', song)
 })
+/*
 ipcMain.on('get-playlist', (event) => {
   sendMessage('playlist-data', playlist)
   mainWindow.webContents.send('playlist-data', playlist)
@@ -155,6 +153,7 @@ ipcMain.on("update-playlist", (evt, content) => {
   sendMessage('playlist-data', playlist)
   mainWindow.webContents.send('playlist-data', playlist)
 });
+*/
 ipcMain.on("slide", (evt, slide) => {
 
   if (slideWindow !== undefined) {
@@ -168,6 +167,11 @@ ipcMain.on("black", (evt, status) => {
     slideWindow.webContents.send("black", status);
   }
 });
+ipcMain.on("text", (evt, status) => {
+  if (slideWindow !== undefined) {
+    slideWindow.webContents.send("text", status);
+  }
+});
 ipcMain.on("open-slide-window", (event, data) => {
   if (slideWindowOpen !== true) {
     console.log("open-slide-window");
@@ -175,9 +179,14 @@ ipcMain.on("open-slide-window", (event, data) => {
     createSlideWindow();
   }
 });
+ipcMain.on("close-slide-window", (event, data) => {
+  if (slideWindow !== undefined) {
+    slideWindow.close()
+  }
+});
 ipcMain.on("show-slide-window", (event, data) => {
-  var slideWindow;
-  createSlideWindow();
+
+  slideWindow.show();
 });
 ipcMain.on("hide-slide-window", (event, data) => {
   if (slideWindowOpen === true) {
@@ -199,13 +208,6 @@ ipcMain.on("choose-slide-background", (event, data) => {
 
   const options = {
     title: 'Choose Background for Slide',
-    //defaultPath: '/path/to/something/',
-    //buttonLabel: 'Do it',
-    /*filters: [
-      { name: 'xml', extensions: ['xml'] }
-    ],*/
-    //properties: ['showHiddenFiles'],
-    //message: 'This message will only be shown on macOS'
   };
 
   if (data.backgroundType === 'image' || data.backgroundType === 'video') {
@@ -228,12 +230,13 @@ ipcMain.on("select-file", (event, data) => {
   };
   dialog.showOpenDialog(null, options, (filePaths) => {
     event.sender.send(data.event, {
-      filePath: filePaths[0],
+      filePath: filePaths[0].replace(/\\/g, "/"),
       data: data.data
     })
   });
 
 })
+/*
 ipcMain.on("send-me-files", () => {
   mainWindow.webContents.send('library-folders', {
     pads: padsDir
@@ -244,12 +247,12 @@ ipcMain.on("send-me-files", () => {
   })
  
 })
-
+*/
 var secret = "scarioti@gmail.com";
 
 var simpleCrypto = new SimpleCrypto(secret);
 var string =
-  "valid|Chiesa Evangelica della Riconciliazione Catanzaro|scarioti@gmail.com|EU71qF1ZZNb9MXiRtBJs|2019-12-31|church|Chords";
+  '{"licenseExpiration":"2019-12-21","licenseID":"907e73c8e4fc4c0fc114922aa9002771","licenseType":"church","orgEmail":"scarioti@gmail.com","orgName":"Chiesa Evangelica della Riconciliazione Catanzaro","sector":"907e73c8e4fc4c0fc114922aa900cd86","sectors":["all"],"userEmail":"scarioti@gmail.com","userName":"Simonpietro Carioti","userProfile":"superadmin"}';
 var chiperText = simpleCrypto.encrypt(string);
 var decrypted = simpleCrypto.decrypt(chiperText);
 console.log(chiperText);
@@ -259,10 +262,6 @@ if (process.env.PROD) {
     .join(__dirname, "statics")
     .replace(/\\/g, "\\\\");
 }
-
-
-
-
 
 var mainWindow, splashScreen, slideWindow;
 var slideWindowOpen;
@@ -283,6 +282,7 @@ function createWindow() {
     useContentSize: true,
     webPreferences: {
       nodeIntegration: true,
+      performance : true,
       webSecurity: false
     }
   });
@@ -297,43 +297,9 @@ function createWindow() {
   });
 
   mainWindow.loadURL(process.env.APP_URL);
-  // setTimeout(() => {
+
   mainWindow.maximize();
-  //}, 6000);
-  //mainWindow.hide();
-  // createSplashScreen();
-}
 
-function createSplashScreen() {
-  splashScreen = new BrowserWindow({
-    width: 400,
-    height: 500,
-    resizable: false,
-    frame: false,
-    titleBarStyle: "hidden",
-    modal: true,
-    show: false,
-    icon: require("path").join(__statics, "icons/64x64.png"),
-    webPreferences: {
-      nodeIntegration: true,
-      devTools: false
-    }
-  });
-  splashScreen.once("ready-to-show", () => {
-    splashScreen.show();
-  });
-
-  splashScreen.loadURL(
-    url.format({
-      pathname: require("path").join(__statics, "pages/splashScreen.html"),
-      protocol: "file",
-      slashes: true
-    })
-  );
-
-  setTimeout(() => {
-    splashScreen.hide(), mainWindow.maximize();
-  }, 5000);
 }
 
 function createSlideWindow() {
@@ -360,6 +326,7 @@ function createSlideWindow() {
         nodeIntegration: true,
         //devTools: false,
         webSecurity: false
+      
       }
     });
     slideWindow.on("close", () => {
@@ -375,21 +342,17 @@ function createSlideWindow() {
 app.on("ready", () => {
   createWindow()
   globalShortcut.register('F5', () => {
+    console.log("F5")
     mainWindow.webContents.send("F5");
   })
 
-  /*
-  globalShortcut.register('left', () => {
-    mainWindow.webContents.send("left");
-  })
-  globalShortcut.register('right', () => {
-    mainWindow.webContents.send("right");
-  })
-  */
+
   globalShortcut.register('pagedown', () => {
+    console.log("PAGEDOWN")
     mainWindow.webContents.send("pagedown");
   })
   globalShortcut.register('pageup', () => {
+    console.log("PAGUP")
     mainWindow.webContents.send("pageup");
   })
 
@@ -408,3 +371,5 @@ app.on("activate", () => {
     createWindow();
   }
 });
+
+

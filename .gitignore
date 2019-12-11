@@ -4,7 +4,9 @@
 node_modules
 /dist
 dist-electron
+config.js
 /src/helpers/firebase.js
+/src/helpers/firebase_old.js
 /src-cordova/node_modules
 /src-cordova/platforms
 /src-cordova/plugins
@@ -13,7 +15,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 /Library
-
+/firebase-functions
 # Editor directories and files
 .idea
 .vscode

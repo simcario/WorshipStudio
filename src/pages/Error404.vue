@@ -11,12 +11,12 @@
     </q-header>
     <q-page-container>
       <div class="fixed-center text-center">
-        <p class="text-faded">Something is changed. PleaseLog in again</p>
+        <p class="text-faded">ERROR</p>
         <q-btn
           color="secondary"
           style="width:200px;"
-          @click="$ws.clearStorage().then(()=>$router.push('/FirstConfig'))"
-        >Go Login</q-btn>
+          @click="$router.push('/Chords')"
+        >Go BAck</q-btn>
       </div>
     </q-page-container>
     <q-footer>

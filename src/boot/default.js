@@ -1,5 +1,7 @@
+import config from '../config'
 import Nl2br from "vue-nl2br";
-import firebase from "firebase/app";
+
+//import firebase from "firebase/app";
 //import "firebase/firestore";
 //import "firebase/firebase-auth";
 import Vue from "vue";
@@ -7,8 +9,16 @@ import VueDraggableResizable from "vue-draggable-resizable";
 import VueResizeText from "vue-resize-text"
 import { Notify } from 'quasar'
 import VueVideoSection from 'vue-video-section'
-import VueFuse from 'vue-fuse'
- 
+//import VueFuse from 'vue-fuse'
+import PouchDB from 'pouchdb-browser'
+import find from 'pouchdb-find'
+import livefind from 'pouchdb-live-find'
+import auth from 'pouchdb-authentication'
+import VueSocketIO from 'vue-socket.io'
+PouchDB.plugin(find);
+PouchDB.plugin(livefind);
+PouchDB.plugin(auth);
+
 
 
 require('vue2-animate/dist/vue2-animate.min.css')
@@ -20,15 +30,12 @@ const {
 import {
   ws_helpers
 } from "../helpers/ws.js";
-import db from "../helpers/firebase"
+//import db from "../helpers/firebase"
 
 import wavesurfer from 'wavesurfer.js'
-import moment from 'moment'
+
 // TODO: from localstorage
-const config = {
-  language: "en", //TODO
-  notation: "latin" // anglo or latin
-};
+
 
 // optionally import default styles
 import "vue-draggable-resizable/dist/VueDraggableResizable.css";
@@ -44,70 +51,58 @@ export default ({
   Vue.component("nl2br", Nl2br);
   Vue.component("vue-draggable-resizable", VueDraggableResizable);
   Vue.use(require('vue-shortkey'))
+
+
+  Vue.use(new VueSocketIO({
+    debug: false,
+    connection: 'http://52.15.58.19:7777'
+}))
+
   Vue.use(VueResizeText)
-  Vue.use(VueFuse)
-  Vue.component('vue-video-section', VueVideoSection)
-  const loginInfo = {
-    loggedIn: store.getters["defaultModule/getLoggedIn"],
-    organizationName: store.getters["defaultModule/getOrganizationName"],
-    organizationID: store.getters["defaultModule/getOrganizationID"],
-    startModule: store.getters["defaultModule/getStartModule"],
-    email: store.getters["defaultModule/getEmail"],
-    displayName: store.getters["defaultModule/getDisplayName"]
-  };
-  Vue.prototype.$loginInfo = loginInfo;
+
   Vue.prototype.$mode = "chords";
   Vue.prototype.$ws = ws_helpers;
   Vue.prototype.$config = config;
   Vue.prototype.$store = store;
   Vue.prototype.$renderer = ipcRenderer;
-  Vue.prototype.$firebase = db;
-  Vue.prototype.$firestore = db.firestore();
+  //Vue.prototype.$firebase = db;
+  //Vue.prototype.$firestore = db.firestore();
   Vue.prototype.$wavesurfer = wavesurfer;
   Vue.prototype.$peers = {}
   Vue.prototype.$bus = new Vue()
-  Vue.prototype.$moment = moment;
+  Vue.prototype.$moment = require('moment');
   Vue.prototype.$ver = "1.0.3"
-  
-
+  Vue.prototype.$pouchRemoteSongs = new PouchDB(config.db_remote_songs,{skip_setup:true})
+  Vue.prototype.$pouchRemotePlaylists = new PouchDB(config.db_remote_playlists,{skip_setup:true})
+  Vue.prototype.$pouchPlaylists = new PouchDB('savedplaylists')
+  Vue.prototype.$pouchSongs = new PouchDB('songs')
+  Vue.prototype.$pouchSongsPref = new PouchDB('songsPrefs')
+  Vue.prototype.$pouchApp = new PouchDB('app')
+  Vue.prototype.$pouchSongs.createIndex({
+    index:{
+      fields:['searchref']
+    }
+  })
+  Vue.prototype.$pouchSongsPref.createIndex({
+    index:{
+      fields:['songID']
+    }
+  })
+  Vue.prototype.$pouchApp.createIndex({
+    index:{
+      fields:['objectType']
+    }
+  })
  
-    
-
-  const pcName = store.getters["defaultModule/getComputerName"]
-
-  ws_helpers.loadAllSongs()
-
-  ipcRenderer.on('newPeer', (event, peerName) => {
-    Notify.create({
-      message:'New peer ' + peerName,
-      color:'primary',
-      icon:'fas fa-user',
-      position:'bottom-right'
-    })
-    
+  Vue.prototype.$pouchRemoteSongs.logIn(config.db_username,config.db_password).then(status=>{
+    console.log("STATUS SONG", status)
   })
-
-
-  ipcRenderer.on('peers', (event, peers) => {
-  
-    Vue.prototype.$peers = peers
+  Vue.prototype.$pouchRemotePlaylists.logIn(config.db_username,config.db_password).then(status=>{
+    console.log("STATUS PLAYLISTS", status)
   })
-
-
+    
+  ws_helpers.sync().then(()=>console.log('FIRST SYNC'))
   ws_helpers.versionControl();
-
-  ws_helpers.checkInternetConnection().then(res => {
-    store.dispatch("defaultModule/internetStatus", res).then(() => {});
-  });
-  setInterval(() => {
-    ws_helpers.checkInternetConnection().then(res => {
-      store.dispatch("defaultModule/internetStatus", res).then(() => {});
-    });
-  }, 10000);
-
-  ws_helpers.checkLicenseExpiration().then(res => {
-    store.dispatch("defaultModule/licenseExpired", res).then(() => {});
-  });
 
 
 };
