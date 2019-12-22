@@ -5,6 +5,13 @@ const routes = [
     component: () => import('layouts/Home.vue')
   },
   {
+    path: '/lib',
+    component: () => import('../components/Library.vue'),
+    children: [
+    
+    ]
+  },
+  {
     path: '/slide',
     component: () => import('pages/SlideWindow.vue'),
     children: [

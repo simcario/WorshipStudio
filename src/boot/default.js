@@ -4,10 +4,10 @@ import Nl2br from "vue-nl2br";
 //import firebase from "firebase/app";
 //import "firebase/firestore";
 //import "firebase/firebase-auth";
-import Vue from "vue";
+//import Vue from "vue";
 import VueDraggableResizable from "vue-draggable-resizable";
 import VueResizeText from "vue-resize-text"
-import { Notify } from 'quasar'
+//import { Notify } from 'quasar'
 import VueVideoSection from 'vue-video-section'
 //import VueFuse from 'vue-fuse'
 import PouchDB from 'pouchdb-browser'
@@ -34,9 +34,6 @@ import {
 
 import wavesurfer from 'wavesurfer.js'
 
-// TODO: from localstorage
-
-
 // optionally import default styles
 import "vue-draggable-resizable/dist/VueDraggableResizable.css";
 import {
@@ -54,8 +51,8 @@ export default ({
 
 
   Vue.use(new VueSocketIO({
-    debug: false,
-    connection: 'http://52.15.58.19:7777'
+    debug: true,
+    connection: config.socket_server
 }))
 
   Vue.use(VueResizeText)
@@ -80,7 +77,8 @@ export default ({
   Vue.prototype.$pouchApp = new PouchDB('app')
   Vue.prototype.$pouchSongs.createIndex({
     index:{
-      fields:['searchref']
+      fields:['searchref'],
+      ddoc: "searchrefindex"
     }
   })
   Vue.prototype.$pouchSongsPref.createIndex({
@@ -103,6 +101,6 @@ export default ({
     
   ws_helpers.sync().then(()=>console.log('FIRST SYNC'))
   ws_helpers.versionControl();
-
+  sessionStorage.setItem('playlist',JSON.stringify({name:null,items:[],id:null}))
 
 };

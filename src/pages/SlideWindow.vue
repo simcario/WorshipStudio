@@ -8,7 +8,7 @@
         v-if="visible && black===false"
         class="text"
         :style="{'align-self':template.valign, 'background-color':template.textBackground,color:template.textColor, 'text-shadow':'2px 2px 2px black', border:'1px solid ' + template.textBoxColor}"
-        v-resize-text="{ratio:'1.8', minFontSize:'35px', maxFontSize:'65px', delay:200, }"
+        v-resize-text="{ratio:'1.8', minFontSize:'40px', maxFontSize:'70px', delay:200, }"
       >{{text}}</div>
     </transition>
     <div class="background-container" :style="{'background-image':'url('+template.filePath+')'}" v-if="black===false">

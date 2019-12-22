@@ -3,6 +3,7 @@ export default {
     add_to_playlist:'Aggiungi alla Playlist',
     cancel:'Annulla',
     choose_pad:'Scegli Pad',
+    clear_playlist:'Pulisci Playlist',
     cloud_playlists:'Cloud Playlists',
     created_by:'Creato Da',
     delete:'Elimina',

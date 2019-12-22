@@ -90,7 +90,8 @@ module.exports = function (ctx) {
         'QFooter',
         'QBtnGroup',
         'QTree',
-        'QScrollArea'
+        'QScrollArea',
+        'QPageSticky'
       ],
 
       directives: [

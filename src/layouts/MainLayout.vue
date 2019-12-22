@@ -1,14 +1,14 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-header>
-      <q-bar dense class="bg-grey glossy">
+    <!--  <q-bar dense class="bg-grey glossy">
         <img src="statics/icons/64x64.png" width="20px" />
         WorshipStudio
         <q-space />
         <q-btn dense flat icon="minimize" @click="$ws.appMinimize()" />
         <q-btn dense flat icon="close" @click="$ws.appQuit()" />
-      </q-bar>
-      <q-toolbar class="toolbar-bg">
+      </q-bar> -->
+      <q-toolbar class="toolbar-bg"  v-if="this.$route.path !== '/Chords'">
         <q-btn
           flat
           icon
@@ -81,7 +81,7 @@
       <RegisterDialog :open="registerDialog" />
     </q-page-container>
     <q-footer>
-      <q-bar dense class="bg-grey glossy">
+      <q-bar dense class="bg-grey glossy" style="height:3vh">
         <q-btn
           round
           flat
@@ -94,6 +94,10 @@
           <q-tooltip>Chords</q-tooltip>
           <q-icon name="fas fa-guitar"></q-icon>
         </q-btn>
+
+
+    
+
         <q-btn
           round
           flat
@@ -121,7 +125,13 @@
           <q-tooltip>Preferences</q-tooltip>
           <q-icon name="fas fa-cog"></q-icon>
         </q-btn>
-        <q-btn round flat icon @click="link = !link" :color="link===true ? 'red' : ''">
+        <q-btn
+          round
+          flat
+          icon
+          @click="link = !link"
+          :color="link === true ? 'red' : ''"
+        >
           <q-tooltip>Link</q-tooltip>
           <q-icon name="fas fa-link"></q-icon>
         </q-btn>
@@ -138,6 +148,7 @@
           @click="registerDialog = true"
         ></q-btn>
         <q-badge
+          v-if="licenseInfo !== null"
           :color="
             licenseInfo !== null && licenseInfo.licenseType === 'Demo'
               ? 'negative'
@@ -183,16 +194,9 @@ export default {
   name: "WorshipStudio",
   components: { RegisterDialog, PreferencesDialog },
   mounted() {
-    this.$renderer.on("F5", evt => {
-      console.log("handle F5");
-      this.playlistSong(0);
-    });
-    this.$renderer.on("pagedown", evt => {
-      this.nextSong();
-    });
-    this.$renderer.on("pageup", evt => {
-      this.prevSong();
-    });
+ 
+    this.link = sessionStorage.getItem('link') === "true"
+ 
     this.loadLicenseInfo().then(() => {
       this.loadPreferences().then(() => {
         this.$router.push({ path: "/" + this.preferences.startModule });
@@ -203,24 +207,19 @@ export default {
       this.presence();
     }, 5000);
 
-    //  this.loadSongs();
     this.$root.$on("reload-songs", page => {
       this.loadSongs();
     });
     this.$root.$on("close-preferences", () => {
-      this.loadPreferences();
       this.preferencesDialog = false;
+      this.loadPreferences();
     });
 
-    this.$root.$on("add-to-playlist", id => {
-      this.playlist.items.push(id);
-    });
+ 
     this.$bus.$on("remove-from-playlist", index => {
       this.playlist.items.splice(index, 1);
     });
-    this.$bus.$on("update-playlist", playlist => {
-      this.playlist = playlist;
-    });
+ 
     this.$root.$on("close-register-dialog", () => {
       this.loadLicenseInfo();
       this.registerDialog = false;
@@ -240,7 +239,7 @@ export default {
     client: function(data) {
       let moment = require("moment");
       let nowTime = moment();
-
+ 
       this.clients[data.pcName] = data.time;
       let clients = [];
       Object.keys(this.clients).forEach(key => {
@@ -261,7 +260,9 @@ export default {
       preferences: {
         computerName: null,
         showChords: true,
-        startModule: "Chords"
+        startModule: "Chords",
+        notation: "anglo",
+        language: "en"
       },
       status: {},
       page: null,
@@ -269,15 +270,11 @@ export default {
       clients: {},
       activeClients: {},
       licenseInfo: null,
-      currentPlaylistSongIndex:null,
+      currentPlaylistSongIndex: null,
       text: true,
       slidewindow: true,
       black: false,
-      playlist: {
-        name: "",
-        id: null,
-        items: []
-      }
+     
     };
   },
   methods: {
@@ -295,6 +292,9 @@ export default {
           this.preferences.computerName = pref.data.computerName;
           this.preferences.showChords = pref.data.showChords;
           this.preferences.startModule = pref.data.startModule;
+          this.preferences.notation = pref.data.notation;
+          this.preferences.language = pref.data.language;
+          //this.$i18n.locale = pref.data.language;
           res("ok");
         });
       });
@@ -323,25 +323,13 @@ export default {
       this.$router.push({ path: path });
       return;
     },
-     playlistSong(index) {
+    playlistSong(index) {
       this.currentPlaylistSongIndex = index;
-      this.$ws.getSong(this.playlist.items[index]).then(song=>{
+      this.$ws.getSong(this.playlist.items[index]).then(song => {
         this.openFullScreen(song._id, false);
-      })
-      
+      });
     },
-    nextSong() {
-      const index = this.currentPlaylistSongIndex + 1;
-      if (index < this.playlist.items.length) {
-        this.playlistSong(index);
-      }
-    },
-    prevSong() {
-      const index = this.currentPlaylistSongIndex - 1;
-      if (index > -1) {
-        this.playlistSong(index);
-      }
-    },
+   
   },
   computed: {
     userLabel() {
@@ -349,19 +337,15 @@ export default {
         ? this.licenseInfo.orgName + " - " + this.licenseInfo.userName
         : "";
     },
-    internetStatus() {
-      return this.$store.getters["defaultModule/getInternetStatus"];
-    },
-    licenseExpired() {
-      let validUntil = this.$moment(
-        this.$store.getters["defaultModule/getValidUntil"]
-      );
-      let today = this.$moment();
-
-      return validUntil.diff(today, "days");
+    playlist(){
+       return JSON.parse(sessionStorage.getItem("playlist"));
     }
+  
   },
   watch: {
+    link(){
+      sessionStorage.setItem('link', this.link)
+    },
     text() {
       this.$renderer.send("text", this.text);
     },

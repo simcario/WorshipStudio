@@ -10,7 +10,10 @@ export default {
   name: "FirstConfig",
   mounted() {
   
-        this.$router.push({ path: "/" + this.$store.state.defaultModule.startModule });
+      this.$ws.getPreferences().then(pref=>{
+    
+          this.$router.push({ path: "/" + pref.data.startModule });
+      })
     
   },
   sockets: {},

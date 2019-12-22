@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <q-card v-if="songToEdit!==null">
+    <q-card v-if="songToEdit !== null">
       <q-bar class="bg-grey-10 text-white">
         <q-space />
         <q-btn
@@ -14,12 +14,7 @@
         >
           <q-tooltip content-class="bg-white text-primary">Save</q-tooltip>
         </q-btn>
-        <q-btn
-          dense
-          flat
-          icon="close"
-          @click="$router.push({ path: '/Chords' })"
-        >
+        <q-btn dense flat icon="close" @click="$router.go(-1)">
           <q-tooltip content-class="bg-white text-primary">Close</q-tooltip>
         </q-btn>
       </q-bar>
@@ -35,18 +30,19 @@
         >
           <div
             class="col-auto sectionContainer"
-            style="margin:0px"
+            style="margin:0px; position:relative"
             v-for="(section, index) in songToEdit.sections"
             :key="index"
-            @click="selectedSection = index"
+            @click="selectSection(section, index)"
             v-bind:class="{
               selectedSection: selectedSection === index,
               visibleBorders: $route.params.edit === 'true'
             }"
           >
+          <q-btn flat dense round icon="fas fa-trash" size="xs" class="absolute-right" @click="removeSection(index)" v-if=" $route.params.edit === 'true'" />
             <nl2br
               tag="div"
-              :text="
+              :text=" 
                 $route.params.edit === 'false' &&
                 $route.params.songid !== 'newSong'
                   ? transposeChords[index]
@@ -63,7 +59,11 @@
                   ? section.text
                   : section.text + '|'
               "
-              class-name="songText"
+              :class-name="
+                preferences.showChords === false
+                  ? 'songTextNoChords ' + section.type
+                  : 'songText ' + section.type
+              "
             />
           </div>
         </draggable>
@@ -154,7 +154,6 @@
                       class="nodrag"
                     />
                   </div>
-          
                 </div>
               </q-card-section>
             </q-card>
@@ -224,40 +223,50 @@ import draggable from "vuedraggable";
 export default {
   name: "ViewEditSong",
   components: { draggable },
-      created(){
-          document.addEventListener("keypress", this.bindKey);
-      },
-      destroyed(){
-          document.removeEventListener("keypress", this.bindKey);
-      },
+  created() {
+    document.addEventListener("keypress", this.bindKey);
+  },
+  destroyed() {
+    document.removeEventListener("keypress", this.bindKey);
+  },
   mounted() {
+    this.loadPreferences();
 
-  
     this.loadLicenseInfo().then(() => {
       this.getSong();
     });
+    this.$renderer.on("pagedown", evt => {
+      this.nextSong();
+    });
+    this.$renderer.on("pageup", evt => {
+      this.prevSong();
+    });
+
+    // playlistSong(currentPlaylistIndex + 1)
+  },
+  sockets: {
+    connect: function() {
+      console.log("socket connected from ViewEdit");
+    }
   },
   data() {
     return {
       songToEdit: null,
       selectedSection: 0,
       selectedTab: "info",
-      songID:null,
-      songRev:null,
+      songID: null,
+      songRev: null,
+      preferences: {},
       licenseInfo: {},
-      transpose:0
+      transpose: 0
     };
   },
   methods: {
     bindKey(e) {
-      if (e.keyCode === 112) {
-        if (this.wave !== null) {
-          this.wave.playPause();
-        }
-      }
+
       if (e.keyCode === 43) {
         this.transpose++;
-       
+
         this.$ws.createAlert("Transpose " + this.transpose);
       }
       if (e.keyCode === 45) {
@@ -274,9 +283,8 @@ export default {
       });
     },
     getSong() {
-    
       if (this.$route.params.songid !== "newSong") {
-          this.songID = this.$route.params.songid;
+        this.songID = this.$route.params.songid;
         this.$pouchSongs.get(this.$route.params.songid).then(song => {
           this.songToEdit = song;
         });
@@ -298,6 +306,21 @@ export default {
         };
       }
     },
+    playlistSong(index) {
+      if (index > -1 && index < this.playlist.items.length) {
+        this.$pouchSongs.get(this.playlist.items[index].id).then(song => {
+          this.$store.dispatch("defaultModule/setPlaylistIndex", index);
+
+          this.songToEdit = song;
+        });
+      }
+    },
+    nextSong() {
+      this.playlistSong(this.currentPlaylistIndex + 1);
+    },
+    prevSong() {
+      this.playlistSong(this.currentPlaylistIndex - 1);
+    },
     addSection() {
       this.songToEdit.sections.push({
         type: "verse",
@@ -307,11 +330,18 @@ export default {
 
       this.selectedSection = this.songToEdit.sections.length - 1;
     },
+    selectSection(section, index) {
+      this.selectedSection = index;
+      this.$socket.emit("playSlide", {
+        sector: this.licenseInfo.sector,
+        slide: section,
+        index: index
+      });
+    },
     saveSong() {
       let song = {};
       song = this.songToEdit;
       if (this.songID === null) {
-          
         let searchref = song.title;
         song.sections.forEach(section => {
           searchref = searchref + " " + section.text;
@@ -319,74 +349,519 @@ export default {
         song.searchref = searchref.toLowerCase();
         song.organizationID = this.licenseInfo.licenseID;
         song.email = this.licenseInfo.userEmail;
-        this.$pouchSongs
-          .post(song)
-          .then(doc =>{
-              this.songToEdit['_id'] = doc.id
-              this.songToEdit['_rev'] = doc.rev
-               console.log("DOCUMENT INSERTED", doc)
-          });
+        this.$pouchSongs.post(song).then(doc => {
+          this.songToEdit["_id"] = doc.id;
+          this.songToEdit["_rev"] = doc.rev;
+          console.log("DOCUMENT INSERTED", doc);
+        });
       } else {
-         
-            this.$pouchSongs
+        this.$pouchSongs
           .put(song)
           .then(doc => console.log("DOCUMENT UPDATED", doc));
-        
-        
       }
       this.$q.notify({
         message: "Song was saved",
         color: "positive"
       });
+    },
+    removeSection(index){
+        this.songToEdit.sections.splice(index,1)
+    },
+    loadPreferences() {
+      return new Promise(res => {
+        this.$ws.getPreferences().then(pref => {
+          this.preferences.computerName = pref.data.computerName;
+          this.preferences.showChords = pref.data.showChords;
+          this.preferences.startModule = pref.data.startModule;
+          this.preferences.notation = pref.data.notation;
+          res("ok");
+        });
+      });
     }
   },
-  computed:{
-     transposeChords() {
+  computed: {
+    transposeChords() {
       let parts = [];
       this.songToEdit.sections.forEach(section => {
         // Start Transpose
 
+        let val = this.transpose;
+
+        if (val < 0) {
+          val = 12 + val;
+        }
+
         var txtChords = section.chords.toLowerCase();
         const chords = {
-                anglo: {
-                  c: ["c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"],
-                  "c#": ["c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b", "c"],
-                  db: ["db", "d", "eb", "e", "f", "gb", "g", "ab", "a", "bb", "b", "c"],
-                  d: ["d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b", "c", "c#"],
-                  "d#": ["d#", "e", "f", "f#", "g", "g#", "a", "a#", "b", "c", "c#", "d"],
-                  eb: ["eb", "e", "f", "gb", "g", "ab", "a", "bb", "b", "c", "db", "d"],
-                  e: ["e", "f", "f#", "g", "g#", "a", "a#", "b", "c", "c#", "d", "d#"],
-                  f: ["f", "f#", "g", "g#", "a", "a#", "b", "c", "c#", "d", "d#", "e"],
-                  "f#": ["f#", "g", "g#", "a", "a#", "b", "c", "c#", "d", "d#", "e", "f"],
-                  gb: ["gb", "g", "ab", "a", "bb", "b", "c", "db", "d", "eb", "e", "f"],
-                  g: ["g", "g#", "a", "a#", "b", "c", "c#", "d", "d#", "e", "f", "f#"],
-                  "g#": ["g#", "a", "a#", "b", "c", "c#", "d", "d#", "e", "f", "f#", "g"],
-                  ab: ["ab", "a", "bb", "b", "c", "db", "d", "eb", "e", "f", "gb", "g"],
-                  a: ["a", "a#", "b", "c", "c#", "d", "d#", "e", "f", "f#", "g", "g#"],
-                  "a#": ["a#", "b", "c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a"],
-                  bb: ["bb", "b", "c", "db", "d", "eb", "e", "f", "gb", "g", "ab", "a"],
-                  b: ["b", "c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#"]
-                },
-                latin: {
-                  do:["do","do#","re","re#","mi","fa","fa#","sol","sol#","la","la#","si"],
-                  "do#":["do#","re","re#","mi","fa","fa#","sol","sol#","la","la#","si","do"],
-                  reb:["reb","re","mib","mi","fa","solb","sol","lab","la","sib","si","do"],
-                  re:["re","re#","mi","fa","fa#","sol","sol#","la","la#","si","do","do#"],
-                  "re#":["re#","mi","fa","fa#","sol","sol#","la","la#","si","do","do#","re"],
-                  mib:["mib","mi","fa","solb","sol","lab","la","sib","si","do","reb","re"],
-                  mi:["mi","fa","fa#","sol","sol#","la","la#","si","do","do#","re","re#"],
-                  fa:["fa","fa#","sol","sol#","la","la#","si","do","do#","re","re#","mi"],
-                  "fa#":["fa#","sol","sol#","la","la#","si","do","do#","re","re#","mi","fa"],
-                  solb:["solb","sol","lab","la","sib","si","do","reb","re","mib","mi","fa"],
-                  sol:["sol","sol#","la","la#","si","do","do#","re","re#","mi","fa","fa#"],
-                  "sol#":["sol#","la","la#","si","do","do#","re","re#","mi","fa","fa#","sol"],
-                  lab:["lab","la","sib","si","do","reb","re","mib","mi","fa","solb","sol"],
-                  la:["la","la#","si","do","do#","re","re#","mi","fa","fa#","sol","sol#"],
-                  "la#":["la#","si","do","do#","re","re#","mi","fa","fa#","sol","sol#","la"],
-                  sib:["sib","si","do","reb","re","mib","mi","fa","solb","sol","lab","la"],
-                  si:["si","do","do#","re","re#","mi","fa","fa#","sol","sol#","la","la#"]}
-              };
-        let configChords = chords[this.$config.notation];
+          anglo: {
+            c: [
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b"
+            ],
+            "c#": [
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c"
+            ],
+            db: [
+              "db",
+              "d",
+              "eb",
+              "e",
+              "f",
+              "gb",
+              "g",
+              "ab",
+              "a",
+              "bb",
+              "b",
+              "c"
+            ],
+            d: [
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#"
+            ],
+            "d#": [
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d"
+            ],
+            eb: [
+              "eb",
+              "e",
+              "f",
+              "gb",
+              "g",
+              "ab",
+              "a",
+              "bb",
+              "b",
+              "c",
+              "db",
+              "d"
+            ],
+            e: [
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#"
+            ],
+            f: [
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e"
+            ],
+            "f#": [
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f"
+            ],
+            gb: [
+              "gb",
+              "g",
+              "ab",
+              "a",
+              "bb",
+              "b",
+              "c",
+              "db",
+              "d",
+              "eb",
+              "e",
+              "f"
+            ],
+            g: [
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#"
+            ],
+            "g#": [
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g"
+            ],
+            ab: [
+              "ab",
+              "a",
+              "bb",
+              "b",
+              "c",
+              "db",
+              "d",
+              "eb",
+              "e",
+              "f",
+              "gb",
+              "g"
+            ],
+            a: [
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#"
+            ],
+            "a#": [
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a"
+            ],
+            bb: [
+              "bb",
+              "b",
+              "c",
+              "db",
+              "d",
+              "eb",
+              "e",
+              "f",
+              "gb",
+              "g",
+              "ab",
+              "a"
+            ],
+            b: ["b", "c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#"]
+          },
+          latin: {
+            do: [
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si"
+            ],
+            "do#": [
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do"
+            ],
+            reb: [
+              "reb",
+              "re",
+              "mib",
+              "mi",
+              "fa",
+              "solb",
+              "sol",
+              "lab",
+              "la",
+              "sib",
+              "si",
+              "do"
+            ],
+            re: [
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#"
+            ],
+            "re#": [
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re"
+            ],
+            mib: [
+              "mib",
+              "mi",
+              "fa",
+              "solb",
+              "sol",
+              "lab",
+              "la",
+              "sib",
+              "si",
+              "do",
+              "reb",
+              "re"
+            ],
+            mi: [
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#"
+            ],
+            fa: [
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi"
+            ],
+            "fa#": [
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa"
+            ],
+            solb: [
+              "solb",
+              "sol",
+              "lab",
+              "la",
+              "sib",
+              "si",
+              "do",
+              "reb",
+              "re",
+              "mib",
+              "mi",
+              "fa"
+            ],
+            sol: [
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#"
+            ],
+            "sol#": [
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol"
+            ],
+            lab: [
+              "lab",
+              "la",
+              "sib",
+              "si",
+              "do",
+              "reb",
+              "re",
+              "mib",
+              "mi",
+              "fa",
+              "solb",
+              "sol"
+            ],
+            la: [
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#"
+            ],
+            "la#": [
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la"
+            ],
+            sib: [
+              "sib",
+              "si",
+              "do",
+              "reb",
+              "re",
+              "mib",
+              "mi",
+              "fa",
+              "solb",
+              "sol",
+              "lab",
+              "la"
+            ],
+            si: [
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#"
+            ]
+          }
+        };
+        let configChords = chords[this.preferences.notation];
 
         const extensions = [
           "m",
@@ -459,8 +934,14 @@ export default {
                 let chordExtension = false;
                 let chord;
                 extensions.forEach(extension => {
-                  if (chordPart.substr(chordPart.length - extension.length) === extension) {
-                    chord = chordPart.replace(extension, "");
+                  if (
+                    chordPart.substr(chordPart.length - extension.length) ===
+                    extension
+                  ) {
+                    chord = chordPart.substr(
+                      0,
+                      chordPart.length - extension.length
+                    );
                     chordExtension = true;
                     ext = extension;
                   }
@@ -476,22 +957,21 @@ export default {
                 } else {
                   currentNotation = "anglo";
                 }
-              
-                if (currentNotation !== this.$config.notation) {
-                  chord = chordTranslate[this.$config.notation][chord];
+
+                if (currentNotation !== this.preferences.notation) {
+                  chord = chordTranslate[this.preferences.notation][chord];
                 }
-               
-             
+
                 if (configChords[chord] !== undefined) {
-                  newChord = configChords[chord][this.transpose];
+                  newChord = configChords[chord][val];
                 } else {
                   if (currentNotation === "latin") {
-                    newChord = configChords["do"][this.transpose];
+                    newChord = configChords["do"][val];
                   } else {
                     newChord = "{err}";
                   }
                 }
-              
+
                 newChord = newChord + ext;
                 newChord = newChord.charAt(0).toUpperCase() + newChord.slice(1);
 
@@ -511,23 +991,45 @@ export default {
       });
       return parts;
     },
+    currentPlaylistIndex() {
+      return this.$store.getters["defaultModule/getCurrentPlaylistIndex"];
+    },
+    playlist() {
+      return this.$store.getters["defaultModule/getCurrentPlaylist"];
+    }
+  },
+  watch: {
+    transpose() {
+      if (this.transpose < -11) {
+        this.transpose = 0;
+      }
+      if (this.transpose > 11) {
+        this.transpose = 0;
+      }
+    }
   }
 };
 </script>
 
-<style>
+<style scoped>
 .songText {
   font-size: 18px;
   padding-top: 18px;
   line-height: 39.6px;
+  white-space: pre-line;
+}
+.songTextNoChords {
+  font-size: 25px;
+  white-space: pre-line;
+  padding-bottom: 10px;
 }
 .songChords {
   position: absolute;
   font-size: 18px;
   line-height: 39.6px;
+  white-space: pre;
   color: red;
   font-weight: bold;
-  white-space: pre;
 }
 .visibleBorders {
   border: 1px dotted #dddddd;

@@ -25,7 +25,9 @@ export const ws_helpers = {
               data: {
                 showChords: true,
                 startModule:'Chords',
-                computerName: uniqid("DESKTOP-")
+                computerName: uniqid("DESKTOP-"),
+                language:'en',
+                notation:'anglo'
               }
             };
             Vue.prototype.$pouchApp.post(pref);
@@ -96,12 +98,14 @@ export const ws_helpers = {
   allSongs(str) {
   
     return new Promise(res => {
+      
       Vue.prototype.$pouchSongs
         .find({
           selector: {
             searchref: { $regex: str.toLowerCase() }
           },
-          sort: ["searchref"]
+          sort: ["searchref"],
+          use_index:"searchrefindex"
         })
         .then(songs => {
           res(songs.docs);
@@ -137,7 +141,7 @@ export const ws_helpers = {
           console.log("Songs Change", change);
         })
         .on("paused", function(info) {
-        
+          console.log(info)
           console.log("Sync Playlist");
           Vue.prototype.$pouchPlaylists
             .sync(Vue.prototype.$pouchRemotePlaylists, 
@@ -167,6 +171,9 @@ export const ws_helpers = {
         })
         .on("active", function(info) {
           console.log("Songs active", info);
+        })
+        .on("complete", function(info) {
+          console.log("Songs complete", info);
         })
         .on("error", function(err) {
           console.log("Songs error", err);
@@ -238,23 +245,32 @@ export const ws_helpers = {
           res("");
           return;
         }
-        console.log(playlist);
-        if (playlist.id === null || playlist.id === undefined) {
-          delete playlist.id;
-          playlist.name = title;
-          playlist.licenseID = license.licenseID;
-          playlist.createdBy = license.userName;
-          playlist.email = license.userEmail;
-          playlist.sector = "907e73c8e4fc4c0fc114922aa900cd86"; //TODO:
+   
+        if ( playlist._id === undefined) {
+          let playlistSave = JSON.parse(JSON.stringify(playlist))
+          playlistSave.name = title;
+          playlistSave.licenseID = license.licenseID;
+          playlistSave.createdBy = license.userName;
+          playlistSave.email = license.userEmail;
+          playlistSave.sector =license.sector; 
 
           Vue.prototype.$pouchPlaylists
-            .post({
-              playlist
-            })
+            .post(
+              playlistSave
+            )
             .then(doc => {
-              res(doc.id);
+              Vue.prototype.$pouchPlaylists.get(doc.id).then(pl=>{
+                   Vue.prototype.$store.dispatch('defaultModule/setPlaylist', pl)
+                res(pl);
+              })
             });
         } else {
+          let playlistSave = JSON.parse(JSON.stringify(playlist))
+          Vue.prototype.$pouchPlaylists
+          .put(playlistSave).then(()=>{
+            Vue.prototype.$store.dispatch('defaultModule/setPlaylist', playlistSave)
+            res(playlistSave);
+          })
         }
         // console.log(playlistData)
         Notify.create({
@@ -267,10 +283,10 @@ export const ws_helpers = {
       });
     });
   },
-  removeCloudPlaylist(id) {
+  removeCloudPlaylist(playlist) {
     return new Promise(res => {
       Vue.prototype.$pouchPlaylists
-        .get(id)
+        .get(playlist._id)
         .then(doc => {
           doc._deleted = true
           Vue.prototype.$pouchPlaylists.put(doc);
@@ -289,8 +305,8 @@ export const ws_helpers = {
           let cloud = [];
           docs.rows.forEach(row => {
             console.log("CLOUD PL:",row )
-            let playlist = row.doc.playlist;
-            playlist.id = row.doc._id;
+            let playlist = row.doc;
+    
             cloud.push(playlist);
           });
           res(cloud);
@@ -308,7 +324,9 @@ export const ws_helpers = {
         {
           label: "Yes",
           color: "yellow",
-          handler: () => Vue.prototype.$bus.$emit("update-playlist", playlist)
+          handler: () => {
+            Vue.prototype.$store.dispatch('defaultModule/setPlaylist',playlist)
+          }
         },
         {
           label: "Dismiss",

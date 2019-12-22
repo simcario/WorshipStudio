@@ -4,6 +4,7 @@ export default {
   add_to_playlist:'Addto playlist',
   cancel:'Cancel',
   choose_pad:'Choose Pad',
+  clear_playlist:'Clear Playlist',
   cloud_playlists:'Cloud Playlists',
   created_by:'Created By',
   delete:'Delete',

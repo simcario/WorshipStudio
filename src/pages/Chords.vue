@@ -1,353 +1,214 @@
 <template>
   <q-page>
-    <div class="q-pa-xs main-bg" style="height:100vh">
-      <splitpanes class="default-theme" style="height: 88vh">
-        <pane size="25">
-          <splitpanes horizontal>
-            <pane size="20">
-              <q-card dark style="text-align:center;" class="bg-grey-9">
-                <q-bar dense class="bg-grey-10">PAD Player </q-bar>
-                <q-card-section v-if="wave !== null">
-                  <marquee direction="left">{{ waveTitle }}</marquee>
-                </q-card-section>
-                <q-card-section style="padding:0px">
-                  <div id="waveform"></div>
-                  <q-inner-loading :showing="padLoading">
-                    <q-spinner-bars size="50px" color="primary" />
-                  </q-inner-loading>
-                </q-card-section>
-                <q-card class="section text-center"></q-card>
+    <splitpanes class="default-theme" style="height: 97vh">
+      <pane size="25">
+        <q-card dark style="text-align:center; height:20vh" class="bg-grey-9">
+          <q-bar dense class="bg-grey-10">PAD Player </q-bar>
+          <q-card-section style="padding:5px 0px" v-if="wave !== null">
+            <marquee direction="left">{{ waveName }}</marquee>
+          </q-card-section>
+          <q-card-section style="padding:0px">
+            <div id="waveform"></div>
+            <q-inner-loading :showing="padLoading">
+              <q-spinner-bars size="50px" color="primary" />
+            </q-inner-loading>
+          </q-card-section>
+          <q-card class="section text-center"></q-card>
 
-                <q-menu touch-position context-menu>
-                  <!-- Context Menu -->
-                  <q-list dense style="min-width: 100px">
+          <q-menu touch-position context-menu>
+            <!-- Context Menu -->
+            <q-list dense style="min-width: 100px">
+              <q-item
+                clickable
+                v-close-popup
+                @click="setPad()"
+                :disable="currentSong === null"
+              >
+                <q-item-section avatar>
+                  <q-icon size="16px" name="fas fa-retweet" />
+                </q-item-section>
+                <q-item-section>{{ $t("save_loop_region") }}</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-card>
+
+        <Library />
+
+        <q-card class="bg-grey-9 fill" style="width:100%; height:29vh">
+          <q-tabs
+            dense
+            v-model="activeTab"
+            class="bg-grey-9 shadow-2 glossy text-white"
+            style="height:40px"
+          >
+            <q-tab name="currentPlaylist" label="Playlist" />
+            <q-tab name="cloudPlaylists" label="Cloud Playlists">
+              <q-badge
+                v-show="cloudPlaylists.length > 0"
+                color="red"
+                floating
+                >{{ cloudPlaylists.length }}</q-badge
+              >
+            </q-tab>
+          </q-tabs>
+          <q-tab-panels
+            v-model="activeTab"
+            class="bg-grey-9"
+            style="height:70%"
+          >
+            <!--Playlist -->
+            <q-tab-panel
+              name="currentPlaylist"
+              style="padding:0px; overflow-y:auto"
+            >
+              <q-list dark class="bg-grey-9">
+                <draggable
+                  class="list-group bg-grey-9"
+                  tag="div"
+                  v-model="playlist.items"
+                  @end="$ws.updatePlaylist(playlist)"
+                >
+                  <div v-for="(song, index) in playlist.items" :key="index">
                     <q-item
                       clickable
-                      v-close-popup
-                      @click="setPad()"
-                      :disable="currentSong === null"
+                      v-ripple
+                      :active="song === currentSong"
+                      active-class="bg-grey-8 text-white"
+                      style="padding: 0px 16px;"
+                      @click="playlistSong(index)"
                     >
-                      <q-item-section avatar>
-                        <q-icon size="16px" name="fas fa-retweet" />
-                      </q-item-section>
-                      <q-item-section>{{
-                        $t("save_loop_region")
-                      }}</q-item-section>
-                    </q-item>
-                  </q-list>
-                </q-menu>
-              </q-card>
-              <!-- Pad Player --> </pane
-            ><!-- Pad Player Pane -->
-            <pane size="40" style="display:flex">
-              <q-card dark class="bg-grey-9" style="width:100%">
-                <q-bar dense class="bg-grey-10">{{ $t("library") }}</q-bar>
-                <q-card-section
-                  style="height:43px ;padding:0px;overflow:hidden"
-                >
-                  <q-input
-                    filled
-                    dense
-                    dark
-                    :label="$t('search')"
-                    v-model="searchText"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="fas fa-search" />
-                    </template>
-                    <template v-slot:append v-if="searchText !== ''">
-                      <q-icon name="close" @click="clearText()" />
-                    </template>
-                  </q-input>
-                </q-card-section>
-                <q-card-section
-                  class="scroll"
-                  style="height:70% ;padding:0px;overflow-y:scroll"
-                >
-                  <q-list dense>
-                    <div v-for="(song, index) in songs" :key="index">
-                      <q-item
-                        clickable
-                        v-ripple
-                        :active="song._id === currentSong"
-                        active-class="bg-grey-8 text-white"
-                        style="padding: 0px 16px;"
-                        @click="openSong(song._id)"
-                        @dblclick="openFullScreen(song._id, false)"
-                      >
-                        <q-menu touch-position context-menu>
-                          <!-- Context Menu -->
-                          <q-list dense style="min-width: 100px">
-                            <q-item
-                              clickable
-                              v-close-popup
-                              @click="openFullScreen(song._id, false)"
-                            >
-                              <q-item-section avatar>
-                                <q-icon
-                                  size="16px"
-                                  name="fas fa-external-link-alt"
-                                />
-                              </q-item-section>
-                              <q-item-section>{{ $t("open") }}</q-item-section>
-                            </q-item>
-                            <q-item
-                              clickable
-                              v-close-popup
-                              @click="openFullScreen(song._id, true)"
-                            >
-                              <q-item-section avatar>
-                                <q-icon size="16px" name="fas fa-edit" />
-                              </q-item-section>
-                              <q-item-section>{{ $t("edit") }}</q-item-section>
-                            </q-item>
-                            <q-item
-                              clickable
-                              v-close-popup
-                              @click="openDeleteDialog(song)"
-                            >
-                              <q-item-section avatar>
-                                <q-icon size="16px" name="fas fa-trash-alt" />
-                              </q-item-section>
-                              <q-item-section>{{
-                                $t("delete")
-                              }}</q-item-section>
-                            </q-item>
-                            <q-separator />
-                            <q-item
-                              clickable
-                              v-close-popup
-                              @click="openPad(song._id)"
-                            >
-                              <q-item-section avatar>
-                                <q-icon size="16px" name="fas fa-volume-off" />
-                              </q-item-section>
-                              <q-item-section>{{
-                                $t("choose_pad")
-                              }}</q-item-section>
-                            </q-item>
-                            <q-separator />
-                            <q-item
-                              clickable
-                              v-close-popup
-                              @click="$root.$emit('add-to-playlist', song._id)"
-                            >
-                              <q-item-section avatar>
-                                <q-icon size="16px" name="fas fa-list" />
-                              </q-item-section>
-                              <q-item-section>{{
-                                $t("add_to_playlist")
-                              }}</q-item-section>
-                            </q-item>
-                          </q-list>
-                        </q-menu>
-                        <q-item-section>
-                          <q-item-label style="font-weight:bold">{{
-                            song.title
-                          }}</q-item-label>
-                          <q-item-label caption class="text-white">{{
-                            song.author
-                          }}</q-item-label>
-                        </q-item-section>
-                        <q-item-section top side class="text-white">
-                          {{ song.number }}
-                        </q-item-section>
-                      </q-item>
-                      <q-separator v-if="index < songs.length - 1" />
-                    </div>
-                  </q-list>
-                </q-card-section>
-              </q-card>
-              <!-- Library-->
-            </pane>
-            <!-- Library Pane -->
-            <pane style="display:flex">
-              <q-card class="bg-grey-9 fill" style="width:100%">
-                <q-tabs
-                  dense
-                  v-model="activeTab"
-                  class="bg-grey-9 shadow-2 glossy text-white"
-                  style="height:40px"
-                >
-                  <q-tab name="currentPlaylist" label="Playlist" />
-                  <q-tab name="cloudPlaylists" label="Cloud Playlists">
-                    <q-badge
-                      v-show="cloudPlaylists.length > 0"
-                      color="red"
-                      floating
-                      >{{ cloudPlaylists.length }}</q-badge
-                    >
-                  </q-tab>
-                </q-tabs>
-                <q-tab-panels
-                  v-model="activeTab"
-                  class="bg-grey-9"
-                  style="height:70%"
-                >
-                  <!--Playlist -->
-                  <q-tab-panel
-                    name="currentPlaylist"
-                    style="padding:0px; overflow-y:auto"
-                  >
-                    <q-list dark class="bg-grey-9">
-                      <draggable
-                        class="list-group bg-grey-9"
-                        tag="div"
-                        v-model="playlist.items"
-                        @end="$ws.updatePlaylist(playlist)"
-                      >
-                        <div
-                          v-for="(song, index) in playlist.items"
-                          :key="index"
-                        >
+                      <q-menu touch-position context-menu>
+                        <!-- Context Menu -->
+                        <q-list dense style="min-width: 100px">
                           <q-item
                             clickable
-                            v-ripple
-                            :active="song === currentSong"
-                            active-class="bg-grey-8 text-white"
-                            style="padding: 0px 16px;"
-                            @click="openPlaylistSong(index)"
-                            v-if="selectedSong !== undefined"
+                            v-close-popup
+                            @click="removeFromPlaylist(index)"
                           >
-                            <q-menu touch-position context-menu>
-                              <!-- Context Menu -->
-                              <q-list dense style="min-width: 100px">
-                                <q-item
-                                  clickable
-                                  v-close-popup
-                                  @click="$ws.removeFromPlaylist(index)"
-                                >
-                                  <q-item-section avatar>
-                                    <q-icon size="16px" name="fas fa-ban" />
-                                  </q-item-section>
-                                  <q-item-section>Remove</q-item-section>
-                                </q-item>
-                              </q-list>
-                            </q-menu>
-                            <q-item-section>
-                              <div>{{ selectedSong.title }}</div>
+                            <q-item-section avatar>
+                              <q-icon size="16px" name="fas fa-ban" />
                             </q-item-section>
-                            <q-item-label caption>{{
-                              selectedSong.author
-                            }}</q-item-label>
-                            <q-item-section top side class="text-white">
-                              {{ selectedSong.number }}
-                              <br />
-                              <q-icon
-                                flat
-                                name="fas fa-volume-off"
-                                size="12px"
-                                v-show="
-                                  songsSettings[song] !== undefined &&
-                                    songsSettings[song].pad !== undefined
-                                "
-                              />
-                            </q-item-section>
+                            <q-item-section>Remove</q-item-section>
                           </q-item>
-                          <q-separator
-                            v-if="index < playlist.items.length - 1"
-                          />
-                        </div>
-                      </draggable>
-                    </q-list>
-                  </q-tab-panel>
-                  <q-tab-panel name="cloudPlaylists" class="q-pa-none">
-                    <q-list dark>
-                      <div v-for="(pl, index) in cloudPlaylists" :key="index">
+                        </q-list>
+                      </q-menu>
+                      <q-item-section>
+                        <div>{{ song.title }}</div>
+                      </q-item-section>
+                      <q-item-label caption>{{ song.author }}</q-item-label>
+                      <q-item-section top side class="text-white">
+                        {{ song.number }}
+                      </q-item-section>
+                    </q-item>
+                    <q-separator v-if="index < playlist.items.length - 1" />
+                  </div>
+                </draggable>
+              </q-list>
+            </q-tab-panel>
+            <q-tab-panel name="cloudPlaylists" class="q-pa-none">
+              <q-list dark>
+                <div v-for="(pl, index) in cloudPlaylists" :key="index">
+                  <q-item
+                    clickable
+                    v-ripple
+                    @dblclick="$ws.loadCloudPlaylist(pl)"
+                  >
+                    <q-menu touch-position context-menu>
+                      <!-- Context Menu -->
+                      <q-list dense style="min-width: 100px">
                         <q-item
                           clickable
-                          v-ripple
-                          @dblclick="$ws.loadCloudPlaylist(pl)"
+                          v-close-popup
+                          @click="removeCloudPlaylist(pl)"
                         >
-                          <q-menu touch-position context-menu>
-                            <!-- Context Menu -->
-                            <q-list dense style="min-width: 100px">
-                              <q-item
-                                clickable
-                                v-close-popup
-                                @click="removeCloudPlaylist(pl.id)"
-                              >
-                                <q-item-section avatar>
-                                  <q-icon size="16px" name="fas fa-trash-alt" />
-                                </q-item-section>
-                                <q-item-section>Delete</q-item-section>
-                              </q-item>
-                            </q-list>
-                          </q-menu>
-                          <q-item-section>
-                            <q-item-label>{{ pl.name }}</q-item-label>
-                            <q-item-label caption>
-                              {{ $t("created_by") }}
-                              <strong>{{ pl.createdBy }}</strong>
-                            </q-item-label>
+                          <q-item-section avatar>
+                            <q-icon size="16px" name="fas fa-trash-alt" />
                           </q-item-section>
+                          <q-item-section>Delete</q-item-section>
                         </q-item>
-                        <q-separator v-if="index < cloudPlaylists.length - 1" />
-                      </div>
-                    </q-list>
-                  </q-tab-panel>
-                </q-tab-panels>
-                <q-bar dark dense class="bg-grey-8">
-                  <q-btn
-                    flat
-                    round
-                    icon="fas fa-save"
-                    color="white"
-                    @click="playListNameDialog = true"
-                  >
-                    <q-tooltip>{{ $t("save_playlist") }}</q-tooltip>
-                  </q-btn>
-                </q-bar>
-              </q-card>
-              <!-- Playlists and Cloud -->
-            </pane>
-            <!-- Playlist Pane -->
-          </splitpanes>
-        </pane>
-        <pane size="75">
-          <q-card style="height:88vh; overflow-y:scroll">
-            <q-card-section v-if="currentSong !== null">
-              <div class="column" style="height:88vh; ">
+                      </q-list>
+                    </q-menu>
+                    <q-item-section>
+                      <q-item-label>{{ pl.name }}</q-item-label>
+                      <q-item-label caption>
+                        {{ $t("created_by") }}
+                        <strong>{{ pl.createdBy }}</strong>
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <q-separator v-if="index < cloudPlaylists.length - 1" />
+                </div>
+              </q-list>
+            </q-tab-panel>
+          </q-tab-panels>
+          <q-bar dark dense class="bg-grey-8">
+            <q-btn
+              flat
+              round
+              icon="fas fa-save"
+              color="white"
+              @click="playListNameDialog = true"
+            >
+              <q-tooltip>{{ $t("save_playlist") }}</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              round
+              icon="fas fa-ban"
+              color="white"
+              @click="playlist.items = []"
+            >
+              <q-tooltip>{{ $t("clear_playlist") }}</q-tooltip>
+            </q-btn>
+          </q-bar>
+        </q-card>
+      </pane>
+      <pane size="75">
+        <q-tabs dense v-model="selectedViewTab" class="text-white">
+          <q-tab name="preview" icon="far fa-file-image" label="Preview" />
+          <q-tab name="alarms" icon="fas fa-stream" label="Multitracks" />
+        </q-tabs>
+        <q-tab-panels v-model="selectedViewTab">
+          <q-tab-panel name="preview" style="padding:0px">
+            <q-card style="height:98vh;">
+              <q-card-section v-if="currentSong !== null" class="q-pa-xs">
                 <div
-                  class="col-auto  q-pb-md"
-                  style="margin:0px"
-                  v-for="(section, index) in selectedSong.sections"
-                  :key="index"
+                  class="column"
+                  style="height:94vh; "
+                  v-if="selectedSong !== null"
                 >
                   <div
-                    :style="{
-                      'white-space': 'pre-line',
-                      color: textStyle.chordsColor,
-                      'font-size': textStyle.size + 'px',
-                      'font-weight': textStyle.chordsWeight,
-                      'line-height': textStyle.size * 2.2 + 'px',
-                      position: 'absolute'
-                    }"
-                    v-if="section !== undefined"
+                    class="col-auto  q-pb-md"
+                    style="margin:0px"
+                    v-for="(section, index) in selectedSong.sections"
+                    :key="index"
                   >
-                    {{ transposeChords[index] }}
-                  </div>
-                  <div
-                    :style="{
-                      'white-space': 'pre-line',
-                      color: textStyle.textColor,
-                      'font-size': textStyle.size + 'px',
-                      'font-weight': textStyle.textWeight,
-                      'padding-top': textStyle.size + 'px',
-                      'line-height': textStyle.size * 2.2 + 'px'
-                    }"
-                    editable="true"
-                  >
-                    {{ section.text }}
+                    <nl2br
+                      v-if="preferences.showChords === true"
+                      tag="div"
+                      :text="transposeChords[index]"
+                      class-name="songChords"
+                    />
+
+                    <nl2br
+                      tag="div"
+                      :text="section.text"
+                      :class-name="
+                        preferences.showChords === false
+                          ? 'songTextNoChords ' + section.type
+                          : 'songText ' + section.type
+                      "
+                    />
                   </div>
                 </div>
-              </div>
-              <!-- Song Items -->
-            </q-card-section>
-          </q-card>
-        </pane>
-      </splitpanes>
-    </div>
+                <!-- Song Items -->
+              </q-card-section>
+            </q-card>
+          </q-tab-panel>
+        </q-tab-panels>
+      </pane>
+    </splitpanes>
 
     <q-dialog v-model="playListNameDialog">
       <q-card style="min-width: 250px" class="bg-grey-8">
@@ -355,7 +216,7 @@
         <q-input
           dark
           dense
-          v-model="currentPlaylistTitle"
+          v-model="playlist.name"
           label="Playlist Title"
         ></q-input>
         <q-card-actions>
@@ -370,12 +231,6 @@
 </template>
 
 <script>
-import draggable from "vuedraggable";
-import SlideThumb from "../components/SlideThumb";
-import TemplateEditor from "../components/dialogs/TemplateEditor";
-import NewSongDialog from "../components/index/NewSongDialog";
-import ChordViewer from "../components/index/ChordViewer";
-import LeftDrawer from "../components/LeftDrawer";
 import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
 import WaveSurfer from "wavesurfer.js";
@@ -386,24 +241,28 @@ export default {
   components: {
     Splitpanes,
     Pane,
-    SlideThumb,
-    TemplateEditor,
-    draggable,
-    NewSongDialog,
-    ChordViewer,
-    LeftDrawer
+    Library: () => import("../components/Library"),
+    draggable: () => import("vuedraggable")
   },
-    created(){
-      document.addEventListener("keypress", this.bindKey);
+  created() {
+    document.addEventListener("keypress", this.bindKey);
   },
-  destroyed(){
-      document.removeEventListener("keypress", this.bindKey);
+  destroyed() {
+    document.removeEventListener("keypress", this.bindKey);
   },
+  beforeDestroy() {
+    this.$root.$off("edit-song");
+    this.$root.$off("library-single-click");
+    this.$root.$off("library-double-click");
+  },
+
   mounted() {
-    this.reloadSongs();
-    this.$renderer.send("close-slide-window");
+    this.$renderer.on("F5", evt => {
+      this.playlistSong(0);
+    });
+    this.$renderer.send("hide-slide-window");
     this.getCloudPlaylists();
-    this.$root.$on("set-pad", name => {
+    this.$root.$once("set-pad", name => {
       if (this.currentSong !== null) {
         this.$store.dispatch("defaultModule/setSongPad", {
           songID: this.currentSong,
@@ -411,11 +270,26 @@ export default {
         });
       }
     });
-    this.$root.$on("open-pad", name => {
+    this.$root.$once("open-pad", name => {
       this.padLoading = true;
       this.waveName = name;
     });
-    this.$renderer.send("send-me-files");
+    this.$root.$on("library-single-click", id => {
+      this.$store.dispatch("defaultModule/setCurrentSong", id);
+      this.openSong(id);
+    });
+    this.$root.$once("library-double-click", id => {
+      this.openFullScreen(id, false);
+    });
+    this.$root.$once("edit-song", id => {
+      this.openFullScreen(id, true);
+    });
+    this.$bus.$once("update-playlist", playlist => {
+      this.currentPlaylistTitle = playlist.name; //TODO Update playlist (with ID) ad replicate on Slides
+      this.playlist = playlist;
+      sessionStorage.setItem("playlist", JSON.stringify(playlist));
+    });
+
     this.$renderer.on("choose-pad", (e, data) => {
       this.$pouchSongsPref
         .find({
@@ -429,27 +303,31 @@ export default {
                 fileName: data.filePath
               })
               .then(doc => {
-              
                 this.applyWave({
                   fileName: data.filePath
                 });
               });
+          } else {
+            let doc = res.docs[0];
+            doc.fileName = data.filePath;
+            this.$pouchSongsPref.put(doc).then(() => {
+              this.applyWave({
+                fileName: data.filePath
+              });
+            });
           }
         });
     });
 
-    this.$bus.$on("loading", loading => {
+    this.$bus.$once("loading", loading => {
       this.loading = loading;
     });
-
-    
   },
   sockets: {
     connect: function() {
       console.log("socket connected from chords");
     },
     openSong: function(data) {
-      console.log("SOCKET FULL SCREEN");
       if (this.link === true) {
         this.$q.notify({
           message: data.name + " has selected current song!",
@@ -464,26 +342,24 @@ export default {
       w: null,
       activeTab: "currentPlaylist",
       activeTab2: "slide-templates",
-      allSongs: {},
       cloudPlaylists: [],
-      ChordViewer: false,
       currentPlaylistTitle: null,
-      currentPlaylistSongIndex: 0,
       currentSong: null,
       currentSongRef: null,
-
       loading: false,
       newSongDialog: false,
       padLoading: false,
+
       playListNameDialog: false,
       searchText: "",
       selectedSection: null,
       selectedSlideIndex: null,
       selectedPlaylistIndex: null,
-      selectedSong:null,
+      selectedSong: null,
+      selectedViewTab: "preview",
       selectedTab: "info",
       selectedTemplate: null,
-      songs: {},
+      //songs: {},
       songEdit: false,
       songNew: false,
       songParts: [],
@@ -541,15 +417,12 @@ export default {
             message: "Pad file ready!"
           });
           this.padLoading = false;
-          console.log("WAVEFORM READY WATCHER");
+
           this.wave.clearRegions();
 
           if (pad.region !== undefined && pad.region !== null) {
-            console.log("waveName WATCHER not null");
-
             this.wave.addRegion(pad.region);
           } else {
-            console.log("waveName WATCHER NULL");
             this.wave.addRegion({
               start: 0,
               end: this.wave.getDuration(),
@@ -569,19 +442,7 @@ export default {
         });
       });
     },
-    openPad(songid) {
-      this.$renderer.send("select-file", {
-        title: this.$t("choose_pad"),
-        event: "choose-pad",
-        data: songid,
-        filters: [
-          {
-            name: this.$t("file_audio"),
-            extensions: ["mp3", "wav"]
-          }
-        ]
-      });
-    },
+
     setPad() {
       let record = this.currentSongRef;
 
@@ -596,7 +457,7 @@ export default {
       });
     },
     bindKey(e) {
-      if (e.keyCode === 112) {
+      if (e.keyCode === 42) {
         if (this.wave !== null) {
           this.wave.playPause();
         }
@@ -610,15 +471,7 @@ export default {
         this.$ws.createAlert("Transpose " + this.transpose);
       }
     },
-    clearText() {
-      this.searchText = "";
-      this.$ws.allSongs("").then(songs => (this.songs = songs));
-    },
-    reloadSongs() {
-      this.$ws.allSongs("").then(songs => {
-        this.songs = songs;
-      });
-    },
+
     openSong(id) {
       this.selectedSlideIndex = null;
       this.currentSong = id;
@@ -664,21 +517,19 @@ export default {
         id: id,
         name: this.preferences.computerName
       });
+
       let path = "ViewEditSong/" + id + "/" + edit;
 
       this.$router.push({ path: path });
       return;
     },
- 
+
     playlistSong(index) {
-      this.currentPlaylistSongIndex = index;
-   
-      this.$ws.getSong(this.playlist.items[index]).then(song=>{
-         this.openFullScreen(song._id, false);
-      })
-     
-     
-    
+      this.$store.dispatch("defaultModule/setPlaylistIndex", index);
+
+      this.$ws.getSong(this.playlist.items[index].id).then(song => {
+        this.openFullScreen(song._id, false);
+      });
     },
     nextSong() {
       const index = this.currentPlaylistSongIndex + 1;
@@ -692,14 +543,10 @@ export default {
         this.playlistSong(index);
       }
     },
-    openPlaylistSong(index) {
+    openPlaylistSong(song) {
       let sections = [];
-      this.selectedPlaylistIndex = index;
-      this.currentSong = this.playlist.items[index];
-      this.$ws.getSong(this.playlist.items[index]).then(song=>{
-       this.openFullScreen(song._id, false);
-     })
-     
+
+      this.openFullScreen(song, false);
     },
     getCloudPlaylists() {
       this.cloudPlaylists = [];
@@ -708,13 +555,18 @@ export default {
       });
     },
     savePlaylist() {
-      this.$ws
-        .savePlaylist(this.playlist, this.currentPlaylistTitle)
-        .then(id => {
-      
-          this.getCloudPlaylists();
-          this.playListNameDialog = false;
-        });
+      this.$ws.savePlaylist(this.playlist, this.playlist.name).then(id => {
+        this.getCloudPlaylists();
+        this.playListNameDialog = false;
+      });
+    },
+    clearPlaylist() {
+      let playlist = {
+        name: null,
+        items: [],
+        id: null
+      };
+      sessionStorage.setItem("playlist", JSON.stringify(playlist));
     },
     removeCloudPlaylist(id) {
       this.$q.notify({
@@ -735,78 +587,501 @@ export default {
       });
     },
 
-     openDeleteDialog(song) {
-      this.$q.notify({
-        message: this.$t("delete_song_confirm"),
-        color: "negative",
-        icon: "fas fa-exclamation-triangle",
-        textColor: "white",
-        position: "center",
-        actions: [
-          {
-            label: "Yes",
-            color: "yellow",
-            handler: () => this.deleteSong(song)
-          },
-          {
-            label: "Dismiss",
-            color: "white",
-            handler: () => console.log("dismiss")
-          }
-        ]
-      });
-      // this.alert=true
-    },
+    removeFromPlaylist(index) {
+      let playlist = JSON.parse(JSON.stringify(this.playlist));
 
-  
+      playlist.items.splice(index, 1);
+      this.$store.dispatch("defaultModule/setPlaylist", playlist);
+    }
   },
   computed: {
+    currentPlaylistIndex() {
+      return this.$store.getters["defaultModule/getCurrentPlaylistIndex"];
+    },
+    playlist() {
+      return this.$store.getters["defaultModule/getCurrentPlaylist"];
+    },
     transposeChords() {
+      let val = this.transpose;
+
+      if (val < 0) {
+        val = 12 + val;
+      }
       let parts = [];
       this.selectedSong.sections.forEach(section => {
         // Start Transpose
 
         var txtChords = section.chords.toLowerCase();
         const chords = {
-            anglo: {
-              c: ["c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"],
-              "c#": ["c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b", "c"],
-              db: ["db", "d", "eb", "e", "f", "gb", "g", "ab", "a", "bb", "b", "c"],
-              d: ["d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b", "c", "c#"],
-              "d#": ["d#", "e", "f", "f#", "g", "g#", "a", "a#", "b", "c", "c#", "d"],
-              eb: ["eb", "e", "f", "gb", "g", "ab", "a", "bb", "b", "c", "db", "d"],
-              e: ["e", "f", "f#", "g", "g#", "a", "a#", "b", "c", "c#", "d", "d#"],
-              f: ["f", "f#", "g", "g#", "a", "a#", "b", "c", "c#", "d", "d#", "e"],
-              "f#": ["f#", "g", "g#", "a", "a#", "b", "c", "c#", "d", "d#", "e", "f"],
-              gb: ["gb", "g", "ab", "a", "bb", "b", "c", "db", "d", "eb", "e", "f"],
-              g: ["g", "g#", "a", "a#", "b", "c", "c#", "d", "d#", "e", "f", "f#"],
-              "g#": ["g#", "a", "a#", "b", "c", "c#", "d", "d#", "e", "f", "f#", "g"],
-              ab: ["ab", "a", "bb", "b", "c", "db", "d", "eb", "e", "f", "gb", "g"],
-              a: ["a", "a#", "b", "c", "c#", "d", "d#", "e", "f", "f#", "g", "g#"],
-              "a#": ["a#", "b", "c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a"],
-              bb: ["bb", "b", "c", "db", "d", "eb", "e", "f", "gb", "g", "ab", "a"],
-              b: ["b", "c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#"]
-            },
-            latin: {
-              do:["do","do#","re","re#","mi","fa","fa#","sol","sol#","la","la#","si"],
-              "do#":["do#","re","re#","mi","fa","fa#","sol","sol#","la","la#","si","do"],
-              reb:["reb","re","mib","mi","fa","solb","sol","lab","la","sib","si","do"],
-              re:["re","re#","mi","fa","fa#","sol","sol#","la","la#","si","do","do#"],
-              "re#":["re#","mi","fa","fa#","sol","sol#","la","la#","si","do","do#","re"],
-              mib:["mib","mi","fa","solb","sol","lab","la","sib","si","do","reb","re"],
-              mi:["mi","fa","fa#","sol","sol#","la","la#","si","do","do#","re","re#"],
-              fa:["fa","fa#","sol","sol#","la","la#","si","do","do#","re","re#","mi"],
-              "fa#":["fa#","sol","sol#","la","la#","si","do","do#","re","re#","mi","fa"],
-              solb:["solb","sol","lab","la","sib","si","do","reb","re","mib","mi","fa"],
-              sol:["sol","sol#","la","la#","si","do","do#","re","re#","mi","fa","fa#"],
-              "sol#":["sol#","la","la#","si","do","do#","re","re#","mi","fa","fa#","sol"],
-              lab:["lab","la","sib","si","do","reb","re","mib","mi","fa","solb","sol"],
-              la:["la","la#","si","do","do#","re","re#","mi","fa","fa#","sol","sol#"],
-              "la#":["la#","si","do","do#","re","re#","mi","fa","fa#","sol","sol#","la"],
-              sib:["sib","si","do","reb","re","mib","mi","fa","solb","sol","lab","la"],
-              si:["si","do","do#","re","re#","mi","fa","fa#","sol","sol#","la","la#"]}
-          };
-        let configChords = chords[this.$config.notation];
+          anglo: {
+            c: [
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b"
+            ],
+            "c#": [
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c"
+            ],
+            db: [
+              "db",
+              "d",
+              "eb",
+              "e",
+              "f",
+              "gb",
+              "g",
+              "ab",
+              "a",
+              "bb",
+              "b",
+              "c"
+            ],
+            d: [
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#"
+            ],
+            "d#": [
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d"
+            ],
+            eb: [
+              "eb",
+              "e",
+              "f",
+              "gb",
+              "g",
+              "ab",
+              "a",
+              "bb",
+              "b",
+              "c",
+              "db",
+              "d"
+            ],
+            e: [
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#"
+            ],
+            f: [
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e"
+            ],
+            "f#": [
+              "f#",
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f"
+            ],
+            gb: [
+              "gb",
+              "g",
+              "ab",
+              "a",
+              "bb",
+              "b",
+              "c",
+              "db",
+              "d",
+              "eb",
+              "e",
+              "f"
+            ],
+            g: [
+              "g",
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#"
+            ],
+            "g#": [
+              "g#",
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g"
+            ],
+            ab: [
+              "ab",
+              "a",
+              "bb",
+              "b",
+              "c",
+              "db",
+              "d",
+              "eb",
+              "e",
+              "f",
+              "gb",
+              "g"
+            ],
+            a: [
+              "a",
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#"
+            ],
+            "a#": [
+              "a#",
+              "b",
+              "c",
+              "c#",
+              "d",
+              "d#",
+              "e",
+              "f",
+              "f#",
+              "g",
+              "g#",
+              "a"
+            ],
+            bb: [
+              "bb",
+              "b",
+              "c",
+              "db",
+              "d",
+              "eb",
+              "e",
+              "f",
+              "gb",
+              "g",
+              "ab",
+              "a"
+            ],
+            b: ["b", "c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#"]
+          },
+          latin: {
+            do: [
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si"
+            ],
+            "do#": [
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do"
+            ],
+            reb: [
+              "reb",
+              "re",
+              "mib",
+              "mi",
+              "fa",
+              "solb",
+              "sol",
+              "lab",
+              "la",
+              "sib",
+              "si",
+              "do"
+            ],
+            re: [
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#"
+            ],
+            "re#": [
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re"
+            ],
+            mib: [
+              "mib",
+              "mi",
+              "fa",
+              "solb",
+              "sol",
+              "lab",
+              "la",
+              "sib",
+              "si",
+              "do",
+              "reb",
+              "re"
+            ],
+            mi: [
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#"
+            ],
+            fa: [
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi"
+            ],
+            "fa#": [
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa"
+            ],
+            solb: [
+              "solb",
+              "sol",
+              "lab",
+              "la",
+              "sib",
+              "si",
+              "do",
+              "reb",
+              "re",
+              "mib",
+              "mi",
+              "fa"
+            ],
+            sol: [
+              "sol",
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#"
+            ],
+            "sol#": [
+              "sol#",
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol"
+            ],
+            lab: [
+              "lab",
+              "la",
+              "sib",
+              "si",
+              "do",
+              "reb",
+              "re",
+              "mib",
+              "mi",
+              "fa",
+              "solb",
+              "sol"
+            ],
+            la: [
+              "la",
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#"
+            ],
+            "la#": [
+              "la#",
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la"
+            ],
+            sib: [
+              "sib",
+              "si",
+              "do",
+              "reb",
+              "re",
+              "mib",
+              "mi",
+              "fa",
+              "solb",
+              "sol",
+              "lab",
+              "la"
+            ],
+            si: [
+              "si",
+              "do",
+              "do#",
+              "re",
+              "re#",
+              "mi",
+              "fa",
+              "fa#",
+              "sol",
+              "sol#",
+              "la",
+              "la#"
+            ]
+          }
+        };
+        let configChords = chords[this.preferences.notation];
 
         const extensions = [
           "m",
@@ -883,7 +1158,10 @@ export default {
                     chordPart.substr(chordPart.length - extension.length) ===
                     extension
                   ) {
-                    chord = chordPart.replace(extension, "");
+                    chord = chordPart.substr(
+                      0,
+                      chordPart.length - extension.length
+                    );
                     chordExtension = true;
                     ext = extension;
                   }
@@ -900,14 +1178,15 @@ export default {
                   currentNotation = "anglo";
                 }
 
-                if (currentNotation !== this.$config.notation) {
-                  chord = chordTranslate[this.$config.notation][chord];
+                if (currentNotation !== this.preferences.notation) {
+                  chord = chordTranslate[this.preferences.notation][chord];
                 }
+
                 if (configChords[chord] !== undefined) {
-                  newChord = configChords[chord][this.transpose];
+                  newChord = configChords[chord][val];
                 } else {
                   if (currentNotation === "latin") {
-                    newChord = configChords["do"][this.transpose];
+                    newChord = configChords["do"][val];
                   } else {
                     newChord = "{err}";
                   }
@@ -940,34 +1219,26 @@ export default {
     },
     preferences() {
       return this.$parent.$parent.$parent.$data.preferences;
-    },
-    playlist() {
-      return this.$parent.$parent.$parent.$data.playlist;
-    },
-  
-
-    textStyle() {
-      return {
-        size: 18,
-        chordsColor: "red",
-        textColor: "black",
-        textWeight: "normal",
-        chordsWeight: "bold"
-      };
-    },
-
-  
+    }
   },
   watch: {
+    transpose() {
+      if (this.transpose < -11) {
+        this.transpose = 0;
+      }
+      if (this.transpose > 11) {
+        this.transpose = 0;
+      }
+    },
     searchText() {
       this.$ws.allSongs(this.searchText).then(songs => {
         this.songs = songs;
       });
     },
     currentSong() {
-      this.$ws.getSong(this.currentSong).then(song=>{
-          return this.selectedSong = song
-        })
+      this.$ws.getSong(this.currentSong).then(song => {
+        return (this.selectedSong = song);
+      });
       this.$pouchSongsPref
         .find({
           selector: { songID: this.currentSong }
@@ -975,7 +1246,11 @@ export default {
         .then(data => {
           const pad = data.docs[0] !== undefined ? data.docs[0] : null;
           this.currentSongRef = data.docs[0];
+          if (data.docs[0].fileName !== undefined) {
+            let filePath = data.docs[0].fileName.split("/");
 
+            this.waveName = filePath[filePath.length - 1];
+          }
           if (pad !== null) {
             if (this.wave !== null) {
               this.wave.stop();
@@ -1019,6 +1294,12 @@ export default {
   font-size: 18px;
   padding-top: 18px;
   line-height: 39.6px;
+  white-space: pre-line;
+}
+.songTextNoChords {
+  font-size: 25px;
+  white-space: pre-line;
+  padding-bottom: 10px;
 }
 .songChords {
   position: absolute;

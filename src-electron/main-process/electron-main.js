@@ -199,11 +199,13 @@ ipcMain.on("app-quit", (event, data) => {
 ipcMain.on("app-minimize", (event, data) => {
   mainWindow.minimize();
 });
+/*
 ipcMain.on("restart-app", (event, data) => {
   console.log("RESTART");
   app.relaunch();
   app.quit();
 });
+*/
 ipcMain.on("choose-slide-background", (event, data) => {
 
   const options = {
@@ -277,7 +279,7 @@ function createWindow() {
     width: 1000,
     height: 600,
     show: false,
-    frame: false,
+    //frame: false,
     icon: require("path").join(__statics, "icons/64x64.png"),
     useContentSize: true,
     webPreferences: {

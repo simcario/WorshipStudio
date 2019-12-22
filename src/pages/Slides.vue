@@ -9,9 +9,9 @@
                 <SlideThumb
                   v-if="selectedSlideIndex !== null"
                   :text="songParts[selectedSlideIndex].text.toUpperCase()"
-                  :w="350"
-                  :h="250"
-                  :ratio="1"
+                  :w="340"
+                  :h="240"
+                  :ratio="2.5"
                   :selected="false"
                   :autoplay="true"
                   :template="slideTemplate(selectedSlideIndex)"
@@ -20,104 +20,7 @@
             </div> </pane
           ><!-- Slide Preview -->
           <pane size="40" style="display:flex">
-            <q-card dark class="bg-grey-9" style="width:100%">
-              <q-card-section style="height:20% ;padding:0px;overflow:hidden">
-                <q-input
-                  filled
-                  dense
-                  dark
-                  :label="$t('search')"
-                  v-model="searchText"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="fas fa-search" />
-                  </template>
-                  <template v-slot:append v-if="searchText !== ''">
-                    <q-icon name="close" @click="clearText()" />
-                  </template>
-                </q-input>
-              </q-card-section>
-              <q-card-section
-                class="scroll"
-                style="height:80% ;padding:0px;overflow-y:scroll"
-              >
-                <q-list dense>
-                  <div v-for="(song, index) in songs" :key="index">
-                    <q-item
-                      clickable
-                      v-ripple
-                      :active="song._id === currentSong"
-                      active-class="bg-grey-8 text-white"
-                      style="padding: 0px 16px;"
-                      @click="openSong(song._id)"
-                   
-                    >
-                      <q-menu touch-position context-menu>
-                        <!-- Context Menu -->
-                        <q-list dense style="min-width: 100px">
-                          <q-item
-                            clickable
-                            v-close-popup
-                            @click="openSong(song._id)"
-                          >
-                            <q-item-section avatar>
-                              <q-icon
-                                size="16px"
-                                name="fas fa-external-link-alt"
-                              />
-                            </q-item-section>
-                            <q-item-section>Open...</q-item-section>
-                          </q-item>
-                          <q-item
-                            clickable
-                            v-close-popup
-                            @click="editSong(song)"
-                          >
-                            <q-item-section avatar>
-                              <q-icon size="16px" name="fas fa-edit" />
-                            </q-item-section>
-                            <q-item-section>Edit</q-item-section>
-                          </q-item>
-                          <q-item
-                            clickable
-                            v-close-popup
-                            @click="openDeleteDialog(song._id)"
-                          >
-                            <q-item-section avatar>
-                              <q-icon size="16px" name="fas fa-trash-alt" />
-                            </q-item-section>
-                            <q-item-section>Delete</q-item-section>
-                          </q-item>
-                          <q-separator />
-                          <q-item
-                            clickable
-                            v-close-popup
-                            @click="$root.$emit('add-to-playlist', song._id)"
-                          >
-                            <q-item-section avatar>
-                              <q-icon size="16px" name="fas fa-list" />
-                            </q-item-section>
-                            <q-item-section>Add to Playlist</q-item-section>
-                          </q-item>
-                        </q-list>
-                      </q-menu>
-                      <q-item-section @dblclick="openSongFull(song)">
-                        <q-item-label style="font-weight:bold">{{
-                          song.title
-                        }}</q-item-label>
-                        <q-item-label caption class="text-white">{{
-                          song.author
-                        }}</q-item-label>
-                      </q-item-section>
-                      <q-item-section top side class="text-white">
-                        {{ song.number }}
-                      </q-item-section>
-                    </q-item>
-                    <q-separator v-if="index < songs.length - 1" />
-                  </div>
-                </q-list>
-              </q-card-section>
-            </q-card>
+            <Library />
           </pane>
           <!-- Library-->
 
@@ -163,8 +66,7 @@
                           :active="song === currentSong"
                           active-class="bg-grey-8 text-white"
                           style="padding: 0px 16px;"
-                          @click="openPlaylistSong(index)"
-                          v-if="songList[song] !== undefined"
+                          @click="openSong(song.id)"
                         >
                           <q-menu touch-position context-menu>
                             <!-- Context Menu -->
@@ -172,7 +74,7 @@
                               <q-item
                                 clickable
                                 v-close-popup
-                                @click="$ws.removeFromPlaylist(index)"
+                                @click="removeFromPlaylist(index)"
                               >
                                 <q-item-section avatar>
                                   <q-icon size="16px" name="fas fa-ban" />
@@ -183,16 +85,12 @@
                           </q-menu>
                           <q-item-section>
                             <div>
-                             
-                              {{ songList[song].title }}
+                              {{ song.title }}
                             </div>
                           </q-item-section>
-                          <q-item-label caption>{{
-                            songList[song].author
-                          }}</q-item-label>
+                          <q-item-label caption>{{ song.author }}</q-item-label>
                           <q-item-section top side class="text-white">
-                            {{ songList[song].number }}
-                           
+                            {{ song.number }}
                           </q-item-section>
                         </q-item>
                         <q-separator v-if="index < playlist.items.length - 1" />
@@ -260,7 +158,7 @@
             <div class="q-pa-xs">
               <div class="row justify-center">
                 <div
-                  class="col-2 q-ma-md"
+                  class="col-auto q-ma-md"
                   style="cursor: pointer;"
                   v-for="(slide, index) in songParts"
                   :key="index"
@@ -384,11 +282,22 @@ export default {
     Pane,
     SlideThumb,
     TemplateEditor,
-    draggable
+    draggable,
+    Library: () => import("../components/Library")
   },
   mounted() {
     this.getCloudPlaylists();
     this.reloadSongs();
+
+    this.$root.$once("library-double-click", id => {
+      this.$store.dispatch("defaultModule/setCurrentSong", id);
+      this.openSong(id);
+    });
+    this.$root.$once("edit-song", id => {
+      console.log("EDIT SONG");
+      this.openFullScreen(id, true);
+    });
+
     this.$renderer.send("open-slide-window");
     this.$root.$on("open-template-editor", () => {
       this.TemplateEditorDialog = true;
@@ -398,44 +307,54 @@ export default {
       this.selectedTemplate = null;
       this.getSlideTemplates();
     });
-
-    this.$renderer.send("get-playlist");
-
-    this.$renderer.on("playlist-data", (evt, playlist) => {
+    this.$bus.$on("update-playlist", playlist => {
+      console.log(playlist);
       this.playlist = playlist;
+      sessionStorage.setItem("playlist", JSON.stringify(playlist));
     });
 
     this.getSlideTemplates();
   },
-    sockets:{
-    connect:function(){
-      console.log("socket connected from slides")
+  beforeDestroy() {
+    this.$root.$off("edit-song");
+    this.$root.$off("library-single-click");
+    this.$root.$off("library-double-click");
+  },
+  sockets: {
+    connect: function() {
+      console.log("socket connected from slides");
     },
-    openSong:function(data){
-      console.log("SOCKET FULL SCREEN")
-      if(this.link === true){
+    openSong: function(data) {
+      console.log("SOCKET FULL SCREEN");
+      if (this.link === true) {
         this.$q.notify({
-              message: data.name + ' has selected current song!',
-              position: 'center'
-            })
-         this.openSong(data.id)
+          message: data.name + " has selected current song!",
+          position: "center"
+        });
+        this.openSong(data.id);
       }
-       
+    },
+    playSlide: function(data) {
+      if (this.link === true) {
+        this.playSlide(data.slide, data.index);
+      }
     }
   },
+
   data() {
     return {
       activeTab: "currentPlaylist",
       activeTab2: "slide-templates",
       cloudPlaylists: [],
       currentSong: {},
-      // playlist: [],
+
       searchText: "",
       selectedSlideIndex: null,
+      selectedSong: null,
       selectedPlaylistIndex: null,
       selectedTemplate: null,
       slideTemplates: [],
-      partsTemplates:{},
+      partsTemplates: {},
       songs: [],
       allSongs: {},
       templates: {},
@@ -451,10 +370,13 @@ export default {
       this.$ws.allSongs("").then(songs => (this.songs = songs));
     },
     openSong(id) {
-      let sections = [];
       this.selectedSlideIndex = null;
-      this.currentSong = id;
-      let song = this.songList[id];
+      this.$ws.getSong(id).then(song => {
+        this.$ws
+          .loadLocalResource(song._id, "slideTemplates")
+          .then(docs => (this.partsTemplates = docs));
+        this.selectedSong = song;
+      });
     },
     filterSongs(filter) {
       this.$ws.filterSongs(filter).then(songs => {
@@ -494,8 +416,27 @@ export default {
       //this.$socket.emit("slide", this.selectedSlideText);
     },
     slideTemplate(slideIndex) {
-      
-      let slidetemplate =  this.partsTemplates !== null && this.partsTemplates[slideIndex] !== undefined ? this.slideTemplatesById[this.partsTemplates[slideIndex]] :  {
+      let slidetemplate =
+        this.partsTemplates !== null &&
+        this.partsTemplates[slideIndex] !== undefined
+          ? this.slideTemplatesById[this.partsTemplates[slideIndex]]
+          : {
+              id: null,
+              templateName: null,
+              filePath: null,
+              backgroundColor: "black",
+              textColor: "white",
+              textAlign: "flex-center",
+              textBackground: "transparent",
+              textBoxColor: "transparent",
+              textShadow: "black",
+              transition: "fade",
+              valign: "flex-center"
+            };
+
+      return slidetemplate !== undefined
+        ? slidetemplate
+        : {
             id: null,
             templateName: null,
             filePath: null,
@@ -508,76 +449,81 @@ export default {
             transition: "fade",
             valign: "flex-center"
           };
-          
-          return slidetemplate !== undefined ? slidetemplate : {
-            id: null,
-            templateName: null,
-            filePath: null,
-            backgroundColor: "black",
-            textColor: "white",
-            textAlign: "flex-center",
-            textBackground: "transparent",
-            textBoxColor: "transparent",
-            textShadow: "black",
-            transition: "fade",
-            valign: "flex-center"
-          };
-     
     },
     setSlideTemplate(template) {
- 
-
       this.$pouchSongsPref
         .find({
-          selector: { songID: this.currentSong }
+          selector: { songID: this.selectedSong._id }
         })
         .then(docs => {
-          docs.docs.forEach(doc => {
-            doc["slideTemplates"][this.selectedSlideIndex] = template;
-            this.$pouchSongsPref
-              .put(doc)
-              .then(() => {
-                this.getSlideTemplates()
-                console.log("DocumentUpdated with Slide Templates")
+          if (docs.docs.length > 0) {
+            docs.docs.forEach(doc => {
+              doc["slideTemplates"][this.selectedSlideIndex] = template;
+              this.$pouchSongsPref.put(doc).then(() => {
+                this.$ws
+                  .loadLocalResource(this.selectedSong._id, "slideTemplates")
+                  .then(docs => (this.partsTemplates = docs));
+                console.log("DocumentUpdated with Slide Templates");
               });
-          });
+            });
+          } else {
+            let slides = {};
+
+            slides[this.selectedSlideIndex] = template;
+            this.$pouchSongsPref
+              .post({
+                songID: this.selectedSong._id,
+                slideTemplates: slides
+              })
+              .then(() => {
+                this.$ws
+                  .loadLocalResource(this.selectedSong._id, "slideTemplates")
+                  .then(docs => (this.partsTemplates = docs));
+                console.log("Slide Updated with selected Template");
+              });
+          }
         })
         .catch(err => {
           console.log(err);
         });
     },
-    setSongTemplate( template) {
-        let slides = {}
-        
-        this.$pouchSongsPref
+    setSongTemplate(template) {
+      let slides = {};
+
+      this.$pouchSongsPref
         .find({
-          selector: { songID: this.currentSong }
+          selector: { songID: this.selectedSong._id }
         })
         .then(docs => {
-          if(docs.docs.length>0){
-             docs.docs.forEach(doc => {
-               this.songParts.forEach((part,index)=>{
-                 doc["slideTemplates"][index] = template;
-              })
-           
-            this.$pouchSongsPref
-              .put(doc)
-              .then(() => {
-                this.getSlideTemplates()
-                console.log("Document Updated with Slide Templates")
+          if (docs.docs.length > 0) {
+            docs.docs.forEach(doc => {
+              this.songParts.forEach((part, index) => {
+                doc["slideTemplates"][index] = template;
               });
-          });
-          }else{
-              let slides = {}
-               this.songParts.forEach((part,index)=>{
-                 slides[index] = template;
-              })
+
+              this.$pouchSongsPref.put(doc).then(() => {
+                console.log("Document Updated with Slide Templates");
+                this.$ws
+                  .loadLocalResource(this.selectedSong._id, "slideTemplates")
+                  .then(docs => (this.partsTemplates = docs));
+              });
+            });
+          } else {
+            let slides = {};
+            this.songParts.forEach((part, index) => {
+              slides[index] = template;
+            });
             this.$pouchSongsPref
               .post({
-                songID:this.currentSong,
-                slideTemplates:slides
+                songID: this.selectedSong._id,
+                slideTemplates: slides
               })
-              .then(() => console.log("Document Created with Slide Templates"));
+              .then(() => {
+                this.$ws
+                  .loadLocalResource(this.selectedSong._id, "slideTemplates")
+                  .then(docs => (this.partsTemplates = docs));
+                console.log("Document Created with Slide Templates");
+              });
           }
         })
         .catch(err => {
@@ -610,7 +556,7 @@ export default {
       });
     },
     editTemplate(template) {
-      console.log(template)
+      console.log(template);
       this.selectedTemplate = template;
       this.TemplateEditorDialog = true;
     },
@@ -637,50 +583,75 @@ export default {
           { label: "No", color: "white" }
         ]
       });
+    },
+    openDeleteDialog(song) {
+      this.$q.notify({
+        message: this.$t("delete_song_confirm"),
+        color: "negative",
+        icon: "fas fa-exclamation-triangle",
+        textColor: "white",
+        position: "center",
+        actions: [
+          {
+            label: "Yes",
+            color: "yellow",
+            handler: () =>
+              this.$ws.deleteSong(song).then(() => this.reloadSongs())
+          },
+          {
+            label: "Dismiss",
+            color: "white",
+            handler: () => console.log("dismiss")
+          }
+        ]
+      });
+      // this.alert=true
+    },
+    addToPlaylist(id) {
+      let playlist = JSON.parse(sessionStorage.getItem("playlist"));
+
+      this.$ws.getSong(id).then(song => {
+        playlist.items.push(song);
+        this.playlist = playlist;
+        sessionStorage.setItem("playlist", JSON.stringify(playlist));
+      });
+    },
+    removeFromPlaylist(index) {
+      let playlist = JSON.parse(JSON.stringify(this.playlist));
+
+      playlist.items.splice(index, 1);
+      this.$store.dispatch("defaultModule/setPlaylist", playlist);
     }
   },
   computed: {
-    link(){
+    link() {
       return this.$parent.$parent.$parent.$data.link;
     },
     songParts() {
-      return this.selectedSong !== undefined ? this.selectedSong.sections : [];
+      return this.selectedSong !== null ? this.selectedSong.sections : [];
     },
-    selectedSong() {
-      return this.songList[this.currentSong];
+    currentPlaylistIndex() {
+      return this.$store.getters["defaultModule/getCurrentPlaylistIndex"];
     },
     playlist() {
-      return this.$parent.$parent.$parent.$data.playlist;
+      return this.$store.getters["defaultModule/getCurrentPlaylist"];
     },
-    slideTemplatesById(){
-      let templates = {}
-      this.slideTemplates.forEach(template=>{
-        templates[template._id] = template
-      })
+
+    slideTemplatesById() {
+      let templates = {};
+      this.slideTemplates.forEach(template => {
+        templates[template._id] = template;
+      });
       return templates;
-    },
-    songList() {
-      let obj = {};
-
-      if (this.songs !== null) {
-        Object.keys(this.songs).forEach(k => {
-          obj[this.songs[k]._id] = this.songs[k];
-        });
-      }
-      return obj;
-    },
-
+    }
   },
   watch: {
     searchText() {
-      this.$ws.filterSongs(this.searchText).then(ret => {
-        this.songs = ret;
+      this.$ws.allSongs(this.searchText).then(songs => {
+        this.songs = songs;
       });
     },
-    currentSong(){
-      console.log('Get Local Resources')
-      this.$ws.loadLocalResource(this.currentSong,'slideTemplates').then(docs=>this.partsTemplates=docs)
-    }
+    currentSong() {}
   }
 };
 </script>
