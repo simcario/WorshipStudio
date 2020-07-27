@@ -10,3 +10,7 @@ export function retrievePlaylist(state, playlist){
 export function retrieveCurrentSong(state, currentSong){
     state.currentSong = currentSong
 }
+
+export function retrieveSongVersion(state, version){
+    state.songVersion = version
+}

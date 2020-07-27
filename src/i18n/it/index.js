@@ -1,8 +1,10 @@
 
 export default {
     add_to_playlist:'Aggiungi alla Playlist',
+    bridge:'Ponte',
     cancel:'Annulla',
     choose_pad:'Scegli Pad',
+    chorus:'Coro',
     clear_playlist:'Pulisci Playlist',
     cloud_playlists:'Cloud Playlists',
     created_by:'Creato Da',
@@ -15,7 +17,10 @@ export default {
     login_and_register:'Login e Registra',
     new_song:'Nuova Canzone',
     new_template:'Nuovo Template',
+    new_version:'Una nuova versione di Worship Studio è disponibile per il download.',
     open:'Apri...',
+    print:'Stampa',
+    preview:'Anteprima',
     register_software:'Registra Software',
     save_loop_region:'Salva regione di loop',
     save_playlist:'Salva Playlist',
@@ -25,5 +30,6 @@ export default {
     toggle_black:'Pulisci Schermo',
     toggle_slide_window:'Mostra/Nascondi Slide',
     toggle_text:'Mostra/Nascondi Testo',
+    verse:'Strofa'
   }
   

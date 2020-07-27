@@ -1,12 +1,8 @@
 <template>
   <q-page>
-    <q-card dark style="background:transparent;" v-if="songToEdit !== null">
-      <q-bar class="bg-grey-10 text-white">
-        <q-btn dense flat label="Close" icon="close" @click="$router.go(-1)">
-          <q-tooltip content-class="bg-white text-primary">Close</q-tooltip>
-        </q-btn>
+       <q-bar class="bg-grey-10 text-white">
         <q-space />
-        <!-- <q-btn
+        <q-btn
           dense
           flat
           icon="fas fa-save"
@@ -16,327 +12,47 @@
           "
         >
           <q-tooltip content-class="bg-white text-primary">Save</q-tooltip>
-        </q-btn> -->
+        </q-btn>
+        <q-btn dense flat icon="close" @click="$router.go(-1)">
+          <q-tooltip content-class="bg-white text-primary">Close</q-tooltip>
+        </q-btn>
       </q-bar>
-
-      <q-card-section>
-        <div class="title text-center">{{ songToEdit.title }}</div>
-        <q-separator color="white" />
-        <q-scroll-area style="height:88vh">
-          <draggable
-            tag="div"
-            class="column"
-            :style="preferences.showChords === true ? 'height:88vh' : ''"
-            v-model="sections"
-          >
-            <div
-              class="col-auto"
-              style="margin:0px; position:relative"
-              v-for="(section, index) in sections"
-              :key="index"
-              v-bind:class="{
-                visibleBorders: $route.params.edit === 'true'
-              }"
-               @click="selectSection(section, index)"
-            >
-              <q-chip
-                square
-                class="absolute-right"
-               
-              >
-                <q-avatar :color="selectedSection !== index ? 'red' : 'blue'"  text-color="white">{{
-                  index + 1
-                }}</q-avatar>
-                {{ $t(section.type) }}
-              </q-chip>
-              <q-btn
-                flat
-                dense
-                round
-                icon="fas fa-trash"
-                size="xs"
-                class="absolute-right"
-                @click="removeSection(index)"
-                v-if="$route.params.edit === 'true'"
-              />
-              <nl2br
-                v-if="preferences.showChords === true"
-                tag="div"
-                :text="
-                  $route.params.edit === 'false' &&
-                  $route.params.songid !== 'newSong'
-                    ? transposeChords[index]
-                    : section.chords + '|'
-                "
-                class-name="songChords"
-              />
-
-              <nl2br
-                tag="div"
-                :text="
-                  $route.params.edit === 'false' &&
-                  $route.params.songid !== 'newSong'
-                    ? section.text
-                    : section.text + '|'
-                "
-                :class-name="
-                  preferences.showChords === false
-                    ? 'songTextNoChords ' + section.type
-                    : 'songText ' + section.type
-                "
-              />
-              <q-separator color="white" />
-            </div>
-          </draggable>
-        </q-scroll-area>
-        <!-- Song Items -->
-      </q-card-section>
-    </q-card>
-
-    <vue-draggable-resizable
-      :w="560"
-      :h="380"
-      :x="500"
-      :y="100"
-      :parent="true"
-      class="no-overflow"
-      drag-cancel=".nodrag"
-      v-if="
-        selectedSection !== undefined &&
-          ($route.params.edit === 'true' || $route.params.songid === 'newSong')
-      "
-    >
-      <q-card style="width 50%;">
-        <q-bar dark class="bg-primary text-white">
-          <q-btn
-            flat
-            icon="fas fa-file"
-            label="Add Section"
-            @click="addSection"
-          />
-        </q-bar>
-        <q-tabs dense v-model="selectedTab">
-          <q-tab name="info" label="Song Info" icon="fas fa-info" />
-          <q-tab name="text" label="Text" icon="fas fa-font" />
-          <q-tab name="chords" label="Chords" icon="fas fa-music" />
-          <q-tab name="links" label="Links" icon="fas fa-link" />
-          <q-tab name="versions" label="Versions" icon="fas fa-layer-group" />
-        </q-tabs>
-        <q-tab-panels v-model="selectedTab">
-          <q-tab-panel style="padding:0px" name="info">
-            <q-card flat>
-              <q-card-section>
-                <q-input
-                  color="primary"
-                  v-model="songToEdit.title"
-                  filled
-                  dense
-                  placeholder="Title"
-                  class="nodrag"
-                />
-              </q-card-section>
-              <q-card-section>
-                <q-input
-                  color="primary"
-                  v-model="songToEdit.original_title"
-                  filled
-                  dense
-                  placeholder="Original Title"
-                  class="nodrag"
-                />
-              </q-card-section>
-              <q-card-section>
-                <q-input
-                  color="primary"
-                  v-model="songToEdit.author"
-                  filled
-                  dense
-                  placeholder="Author"
-                  class="nodrag"
-                />
-              </q-card-section>
-              <q-card-section>
-                <div class="row">
-                  <div class="col-6">
-                    <q-input
-                      color="primary"
-                      v-model="songToEdit.number"
-                      filled
-                      dense
-                      placeholder="Number"
-                      class="nodrag"
-                      style="margin-right:5px"
+      <q-card >
+          <q-scroll-area style="height:200px">
+              <q-card-section v-if="currentSong !== null" class="q-pa-xs">
+                <div
+                  class="column"
+                  style="height:94vh; "
+                  v-if="songToEdit !== null"
+                >
+                  <div
+                    class="col-auto  q-pb-md"
+                    style="margin:0px"
+                    v-for="(section, index) in songToEdit.sections"
+                    :key="index"
+                  >
+                    <nl2br
+                      v-if="preferences.showChords === true"
+                      tag="div"
+                      :text="transposeChords[index]"
+                      class-name="songChords"
                     />
-                  </div>
-                  <div class="col-6">
-                    <q-input
-                      color="primary"
-                      v-model="songToEdit.category"
-                      filled
-                      dense
-                      placeholder="Category"
-                      class="nodrag"
+
+                    <nl2br
+                      tag="div"
+                      :text="section.text"
+                      :class-name="
+                        preferences.showChords === false
+                          ? 'songTextNoChords ' + section.type
+                          : 'songText ' + section.type
+                      "
                     />
                   </div>
                 </div>
+                <!-- Song Items -->
               </q-card-section>
+              </q-scroll-area>
             </q-card>
-          </q-tab-panel>
-
-          <q-tab-panel style="padding:0px" name="text">
-            <q-card flat>
-              <q-card-section class="text-center">
-                <q-btn-toggle
-                  v-model="sections[selectedSection].type"
-                  size="sm"
-                  push
-                  flat
-                  toggle-color="primary"
-                  v-if="sections[selectedSection] !== undefined"
-                  :options="[
-                    { label: 'Verse', value: 'verse' },
-                    { label: 'Chorus', value: 'chorus' },
-                    { label: 'Pre-Chorus', value: 'prechorus' },
-                    { label: 'Bridge', value: 'bridge' },
-                    { label: 'Special', value: 'special' }
-                  ]"
-                />
-              </q-card-section>
-              <q-card-section>
-                <q-input
-                  color="primary"
-                  filled
-                  type="textarea"
-                  placeholder="Enter text here"
-                  class="nodrag"
-                  v-if="sections[selectedSection] !== undefined"
-                  v-model="sections[selectedSection].text"
-                />
-              </q-card-section>
-            </q-card>
-          </q-tab-panel>
-          <q-tab-panel style="padding:0px" name="chords">
-            <q-card
-              flat
-              v-if="
-                sections.length > 0 && sections[selectedSection] !== undefined
-              "
-            >
-              <q-card-section>
-                <q-input
-                  color="primary"
-                  filled
-                  type="textarea"
-                  placeholder="Enter chords here"
-                  v-if="sections[selectedSection] !== undefined"
-                  v-model="sections[selectedSection].chords"
-                  class="nodrag"
-                />
-              </q-card-section>
-            </q-card>
-          </q-tab-panel>
-
-          <q-tab-panel style="padding:0px" name="links">
-            <q-card flat>
-              <q-card-section>
-                <q-input
-                  color="primary"
-                  v-model="songToEdit.youtube"
-                  filled
-                  dense
-                  placeholder="Youtube"
-                  class="nodrag"
-                />
-              </q-card-section>
-              <q-card-section>
-                <q-input
-                  color="primary"
-                  v-model="songToEdit.soundcloud"
-                  filled
-                  dense
-                  placeholder="SoundCloud"
-                  class="nodrag"
-                />
-              </q-card-section>
-            </q-card>
-          </q-tab-panel>
-          <q-tab-panel style="padding:0px" name="versions">
-            <q-card>
-              <q-card-section>
-                <q-list bordered separator>
-                  <q-item
-                    clickable
-                    v-ripple
-                    :active="selectedVersion === null"
-                    active-class="bg-teal-1 text-grey-8"
-                    @click="selectedVersion = null"
-                  >
-                    <q-item-section>Original</q-item-section>
-                  </q-item>
-                  <q-item
-                    clickable
-                    v-ripple
-                    v-for="(version, index) in songToEdit.versions"
-                    :key="index"
-                    :active="selectedVersion === index"
-                    active-class="bg-teal-1 text-grey-8"
-                    @click="selectedVersion = index"
-                  >
-                    <q-item-section>{{ version.title }}</q-item-section>
-                  </q-item>
-                </q-list>
-              </q-card-section>
-              <q-card-actions>
-                <q-btn
-                  flat
-                  icon="fas fa-plus"
-                  label="Add New Version"
-                  @click="newVersionDialog = true"
-                />
-              </q-card-actions>
-            </q-card>
-          </q-tab-panel>
-        </q-tab-panels>
-        <q-card-actions>
-          <q-space />
-          <q-btn
-            dense
-            flat
-            icon="fas fa-save"
-            label="Save"
-            @click="saveSong()"
-            v-show="
-              $route.params.edit === 'true' ||
-                $route.params.songid === 'newSong'
-            "
-          >
-            <q-tooltip content-class="bg-white text-primary">Save</q-tooltip>
-          </q-btn>
-        </q-card-actions>
-      </q-card>
-    </vue-draggable-resizable>
-
-    <q-dialog v-model="newVersionDialog">
-      <q-card>
-        <q-card-section>
-          <div class="text-h6">New Version</div>
-        </q-card-section>
-
-        <q-card-section class="q-pt-none">
-          <q-input v-model="newVersionTitle" label="New Version Title" />
-        </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn
-            flat
-            label="OK"
-            color="primary"
-            @click="addVersion()"
-            v-close-popup
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
   </q-page>
 </template>
 
@@ -350,10 +66,6 @@ export default {
   },
   destroyed() {
     document.removeEventListener("keypress", this.bindKey);
-     this.$store.dispatch(
-        "defaultModule/setSongVersion",
-       null
-      );
   },
   mounted() {
     this.loadPreferences();
@@ -362,7 +74,7 @@ export default {
       this.getSong();
     });
     this.$renderer.on("pagedown", evt => {
-      console.log("pagedown");
+      console.log('pagedown')
       this.nextSong();
     });
     this.$renderer.on("pageup", evt => {
@@ -381,10 +93,6 @@ export default {
       songToEdit: null,
       selectedSection: 0,
       selectedTab: "info",
-      newVersionDialog: false,
-      newVersionTitle: null,
-      selectedVersion: null,
-      sections: [],
       songID: null,
       songRev: null,
       preferences: {},
@@ -394,6 +102,7 @@ export default {
   },
   methods: {
     bindKey(e) {
+
       if (e.keyCode === 43) {
         this.transpose++;
 
@@ -413,34 +122,16 @@ export default {
       });
     },
     getSong() {
-      if (this.$route.params.songid !== "newSong") {
+     
         this.songID = this.$route.params.songid;
         this.$pouchSongs.get(this.$route.params.songid).then(song => {
           this.songToEdit = song;
-          console.log(song)
-          this.sections = this.selectedSongVersion === null ? song.sections : song.versions[this.selectedSongVersion].sections;
-     
         });
-      } else {
-        this.songToEdit = {
-          email: this.licenseInfo.userEmail,
-          licenseID: this.licenseInfo.licenseID,
-          title: null,
-          original_title: null,
-          number: null,
-          author: null,
-          category: null,
-          sections: [
-            {
-              text: "",
-              chords: ""
-            }
-          ]
-        };
-      }
+     
+      
     },
     playlistSong(index) {
-      console.log("Playlistsong", index);
+      console.log("Playlistsong",index)
       if (index > -1 && index < this.playlist.items.length) {
         this.$pouchSongs.get(this.playlist.items[index]._id).then(song => {
           this.$store.dispatch("defaultModule/setPlaylistIndex", index);
@@ -498,20 +189,8 @@ export default {
         color: "positive"
       });
     },
-    addVersion() {
-      let song = {};
-      song = this.songToEdit;
-      if (song.versions === undefined) {
-        song.versions = [];
-      }
-      this.songToEdit.versions.push({
-        title: this.newVersionTitle,
-        sections: JSON.parse(JSON.stringify(song.sections))
-      });
-      this.selectedVersion = this.songToEdit.versions.length - 1;
-    },
-    removeSection(index) {
-      this.songToEdit.sections.splice(index, 1);
+    removeSection(index){
+        this.songToEdit.sections.splice(index,1)
     },
     loadPreferences() {
       return new Promise(res => {
@@ -528,7 +207,7 @@ export default {
   computed: {
     transposeChords() {
       let parts = [];
-      this.sections.forEach(section => {
+      this.songToEdit.sections.forEach(section => {
         // Start Transpose
 
         let val = this.transpose;
@@ -1144,9 +823,6 @@ export default {
     },
     playlist() {
       return this.$store.getters["defaultModule/getCurrentPlaylist"];
-    },
-    selectedSongVersion() {
-      return this.$store.getters["defaultModule/getCurrentSongVersion"];
     }
   },
   watch: {
@@ -1156,15 +832,6 @@ export default {
       }
       if (this.transpose > 11) {
         this.transpose = 0;
-      }
-    },
-    selectedVersion() {
-      if (this.selectedVersion === null) {
-        console.log("Null");
-        this.sections = this.songToEdit.sections;
-      } else {
-        console.log(this.songToEdit.versions[this.selectedVersion].sections);
-        this.sections = this.songToEdit.versions[this.selectedVersion].sections;
       }
     }
   }
@@ -1177,14 +844,11 @@ export default {
   padding-top: 18px;
   line-height: 39.6px;
   white-space: pre-line;
-  text-transform: uppercase;
 }
 .songTextNoChords {
-  font-size: 40px;
-  text-align: center;
+  font-size: 25px;
   white-space: pre-line;
-  padding: 20px;
-  text-transform: uppercase;
+  padding-bottom: 10px;
 }
 .songChords {
   position: absolute;
@@ -1213,13 +877,10 @@ export default {
   overflow: hidden;
 }
 .title {
-  font-size: 60px;
-  text-transform: uppercase;
-  font-weight: bold;
-  color: white;
-  -webkit-text-stroke-width: 0.1px;
-  -webkit-text-stroke-color: black;
-  font-family: "GloriaHallelujah" !important;
+  font-size: 18px;
+  line-height: 40px;
+  padding-top: 15px;
+  font-size: 40px;
 }
 
 .verse {

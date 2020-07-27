@@ -15,9 +15,9 @@ const SimpleCrypto = require("simple-crypto-js").default;
 //http.listen(7777)
 
 const electron = require("electron");
-const shell = require('electron').shell;
+const shell = require("electron").shell;
 //const PCName = store.get('pc-name') || 'COMPUTER'
-const fs = require('fs')
+const fs = require("fs");
 //const chokidar = require('chokidar');
 //const rootPath = require('electron-root-path').rootPath;
 //var padsDir = rootPath.replace(/\\/g, "/") + '/Library/Pads';
@@ -43,9 +43,6 @@ function readDir(dir){
 }
 */
 
-
-
-
 import {
   app,
   BrowserWindow,
@@ -54,8 +51,7 @@ import {
   dialog,
   globalShortcut
 } from "electron";
-app.commandLine.appendSwitch('inspect', '5858')
-
+app.commandLine.appendSwitch("inspect", "5858");
 
 //server.use(bodyParser.json());
 //server.use(cors());
@@ -91,7 +87,6 @@ let playlist = {
 };
 */
 
-
 /*
 function sendMessage(type, message) {
 
@@ -125,14 +120,19 @@ ipcMain.on("pc-name", (event, name) => {
 
 });
 */
-ipcMain.on('open-download-link', (evt) => {
-  shell.openExternal("https://www.simonpietro.it/worshipstudio/downloads/WorshipStudio.exe");
-  app.quit()
-})
-ipcMain.on('song', (event, song) => {
+ipcMain.on("open-link", (evt, link) => {
+  shell.openExternal(link);
+});
+ipcMain.on("open-download-link", evt => {
+  shell.openExternal(
+    "https://www.simonpietro.it/worshipstudio/downloads/WorshipStudio.exe"
+  );
+  app.quit();
+});
+ipcMain.on("song", (event, song) => {
   // sendMessage('song', song)
-  mainWindow.webContents.send('song', song)
-})
+  mainWindow.webContents.send("song", song);
+});
 /*
 ipcMain.on('get-playlist', (event) => {
   sendMessage('playlist-data', playlist)
@@ -155,12 +155,10 @@ ipcMain.on("update-playlist", (evt, content) => {
 });
 */
 ipcMain.on("slide", (evt, slide) => {
-
   if (slideWindow !== undefined) {
     slideWindow.webContents.send("slide-content-play", slide);
     slideWindow.webContents.send("slide-content-play", slide);
   }
-
 });
 ipcMain.on("black", (evt, status) => {
   if (slideWindow !== undefined) {
@@ -181,15 +179,14 @@ ipcMain.on("open-slide-window", (event, data) => {
 });
 ipcMain.on("close-slide-window", (event, data) => {
   if (slideWindow !== undefined) {
-    slideWindow.close()
+    slideWindow.close();
   }
 });
 ipcMain.on("show-slide-window", (event, data) => {
-
   slideWindow.show();
 });
 ipcMain.on("hide-slide-window", (event, data) => {
-  if (slideWindowOpen === true) {
+  if (slideWindowOpen === true && slideWindow !== undefined) {
     slideWindow.hide();
   }
 });
@@ -207,37 +204,33 @@ ipcMain.on("restart-app", (event, data) => {
 });
 */
 ipcMain.on("choose-slide-background", (event, data) => {
-
   const options = {
-    title: 'Choose Background for Slide',
+    title: "Choose Background for Slide"
   };
 
-  if (data.backgroundType === 'image' || data.backgroundType === 'video') {
-    dialog.showOpenDialog(null, options, (filePaths) => {
-
-      event.sender.send('slide-background-selected', {
+  if (data.backgroundType === "image" || data.backgroundType === "video") {
+    dialog.showOpenDialog(null, options, filePaths => {
+      event.sender.send("slide-background-selected", {
         filePath: filePaths[0],
         songID: data.songID,
         slideIndex: data.slideIndex,
         backgroundType: data.backgroundType
-      })
+      });
     });
   }
-})
+});
 ipcMain.on("select-file", (event, data) => {
-
   const options = {
     title: data.title,
     filters: data.filters
   };
-  dialog.showOpenDialog(null, options, (filePaths) => {
+  dialog.showOpenDialog(null, options, filePaths => {
     event.sender.send(data.event, {
       filePath: filePaths[0].replace(/\\/g, "/"),
       data: data.data
-    })
+    });
   });
-
-})
+});
 /*
 ipcMain.on("send-me-files", () => {
   mainWindow.webContents.send('library-folders', {
@@ -256,7 +249,7 @@ var simpleCrypto = new SimpleCrypto(secret);
 var string =
   '{"licenseExpiration":"2019-12-21","licenseID":"907e73c8e4fc4c0fc114922aa9002771","licenseType":"church","orgEmail":"scarioti@gmail.com","orgName":"Chiesa Evangelica della Riconciliazione Catanzaro","sector":"907e73c8e4fc4c0fc114922aa900cd86","sectors":["all"],"userEmail":"scarioti@gmail.com","userName":"Simonpietro Carioti","userProfile":"superadmin"}';
 var chiperText = simpleCrypto.encrypt(string);
-var decrypted = simpleCrypto.decrypt(chiperText);
+
 console.log(chiperText);
 
 if (process.env.PROD) {
@@ -267,8 +260,6 @@ if (process.env.PROD) {
 
 var mainWindow, splashScreen, slideWindow;
 var slideWindowOpen;
-
-
 
 function createWindow() {
   /**
@@ -284,11 +275,11 @@ function createWindow() {
     useContentSize: true,
     webPreferences: {
       nodeIntegration: true,
-      performance : true,
+      performance: true,
       webSecurity: false
     }
   });
-  
+
   mainWindow.on("close", event => {
     app.quit();
   });
@@ -301,11 +292,9 @@ function createWindow() {
   mainWindow.loadURL(process.env.APP_URL);
 
   mainWindow.maximize();
-
 }
 
 function createSlideWindow() {
-
   slideWindowOpen = true;
   var electronScreen = electron.screen;
   var displays = electronScreen.getAllDisplays();
@@ -328,7 +317,6 @@ function createSlideWindow() {
         nodeIntegration: true,
         //devTools: false,
         webSecurity: false
-      
       }
     });
     slideWindow.on("close", () => {
@@ -342,24 +330,20 @@ function createSlideWindow() {
 }
 
 app.on("ready", () => {
-  createWindow()
-  globalShortcut.register('F5', () => {
-    console.log("F5")
+  createWindow();
+  globalShortcut.register("F5", () => {
+    console.log("F5");
     mainWindow.webContents.send("F5");
-  })
+  });
 
-
-  globalShortcut.register('pagedown', () => {
-    console.log("PAGEDOWN")
+  globalShortcut.register("pagedown", () => {
+    console.log("PAGEDOWN");
     mainWindow.webContents.send("pagedown");
-  })
-  globalShortcut.register('pageup', () => {
-    console.log("PAGUP")
+  });
+  globalShortcut.register("pageup", () => {
+    console.log("PAGUP");
     mainWindow.webContents.send("pageup");
-  })
-
- 
- 
+  });
 });
 
 app.on("window-all-closed", () => {
@@ -373,5 +357,3 @@ app.on("activate", () => {
     createWindow();
   }
 });
-
-

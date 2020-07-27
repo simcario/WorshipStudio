@@ -33,7 +33,7 @@ const routes = [
     ]
   },
   {
-    path: '/ViewEditSong/:songid/:edit',
+    path: '/ViewEditSong/:songid/:edit/:link',
     component: () => import('layouts/Blank.vue'),
     children: [
       { path: '', component: () => import('pages/ViewEditSong.vue') }

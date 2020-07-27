@@ -13,3 +13,7 @@ export function getCurrentPlaylist(state){
 export function getCurrentSong(state){
     return state.currentSong
 }
+
+export function getCurrentSongVersion(state){
+    return state.songVersion
+}

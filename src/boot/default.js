@@ -52,7 +52,10 @@ export default ({
 
   Vue.use(new VueSocketIO({
     debug: true,
-    connection: config.socket_server
+    connection: config.socket_server,
+    options:{
+      transports:['websocket','polling']
+    }
 }))
 
   Vue.use(VueResizeText)
@@ -71,6 +74,7 @@ export default ({
   Vue.prototype.$ver = "1.0.3"
   Vue.prototype.$pouchRemoteSongs = new PouchDB(config.db_remote_songs,{skip_setup:true})
   Vue.prototype.$pouchRemotePlaylists = new PouchDB(config.db_remote_playlists,{skip_setup:true})
+  Vue.prototype.$pouchRemoteApp = new PouchDB(config.db_remote_app,{skip_setup:true})
   Vue.prototype.$pouchPlaylists = new PouchDB('savedplaylists')
   Vue.prototype.$pouchSongs = new PouchDB('songs')
   Vue.prototype.$pouchSongsPref = new PouchDB('songsPrefs')
@@ -91,12 +95,22 @@ export default ({
       fields:['objectType']
     }
   })
+
+  Vue.prototype.$pouchRemoteApp.createIndex({
+    index:{
+      fields:['sector']
+    }
+  })
+
  
   Vue.prototype.$pouchRemoteSongs.logIn(config.db_username,config.db_password).then(status=>{
     console.log("STATUS SONG", status)
   })
   Vue.prototype.$pouchRemotePlaylists.logIn(config.db_username,config.db_password).then(status=>{
     console.log("STATUS PLAYLISTS", status)
+  })
+  Vue.prototype.$pouchRemoteApp.logIn(config.db_username,config.db_password).then(status=>{
+    console.log("STATUS APP", status)
   })
     
   ws_helpers.sync().then(()=>console.log('FIRST SYNC'))

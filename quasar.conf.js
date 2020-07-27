@@ -91,7 +91,8 @@ module.exports = function (ctx) {
         'QBtnGroup',
         'QTree',
         'QScrollArea',
-        'QPageSticky'
+        'QPageSticky', 
+        'QVirtualScroll'
       ],
 
       directives: [

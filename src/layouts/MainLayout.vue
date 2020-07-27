@@ -1,14 +1,14 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-header>
-    <!--  <q-bar dense class="bg-grey glossy">
+      <!--  <q-bar dense class="bg-grey glossy">
         <img src="statics/icons/64x64.png" width="20px" />
         WorshipStudio
         <q-space />
         <q-btn dense flat icon="minimize" @click="$ws.appMinimize()" />
         <q-btn dense flat icon="close" @click="$ws.appQuit()" />
       </q-bar> -->
-      <q-toolbar class="toolbar-bg"  v-if="this.$route.path !== '/Chords'">
+      <q-toolbar class="toolbar-bg" v-if="this.$route.path !== '/Chords'">
         <q-btn
           flat
           icon
@@ -79,6 +79,85 @@
       </transition>
       <PreferencesDialog :open="preferencesDialog" />
       <RegisterDialog :open="registerDialog" />
+
+      <q-dialog v-model="creatorDialog">
+        <q-card style="min-width:1000px">
+          <q-card-section>
+            <div class="text-h6">Create License</div>
+          </q-card-section>
+
+          <q-card-section class="q-pt-none">
+            <div class="row">
+              <div class="col-12 q-pa-xs">
+                <q-input
+                  v-model="licenseCreator.orgName"
+                  label="Organization"
+                />
+              </div>
+              <div class="col-4 q-pa-xs">
+                <q-input
+                  v-model="licenseCreator.orgEmail"
+                  label="Organization Email"
+                />
+              </div>
+              <div class="col-4 q-pa-xs">
+                <q-input
+                  v-model="licenseCreator.licenseExpiration"
+                  label="License Expiration"
+                />
+              </div>
+              <div class="col-4 q-pa-xs">
+                <q-input
+                  v-model="licenseCreator.licenseType"
+                  label="License Type"
+                />
+              </div>
+              <div class="col-4 q-pa-xs">
+                <q-input v-model="licenseCreator.sector" label="Sector" />
+              </div>
+              <div class="col-4 q-pa-xs">
+                <q-input
+                  v-model="licenseCreator.userEmail"
+                  label="User Email"
+                />
+              </div>
+              <div class="col-4 q-pa-xs">
+                <q-input v-model="licenseCreator.userName" label="User Name" />
+              </div>
+              <div class="col-4 q-pa-xs">
+                <q-input
+                  v-model="licenseCreator.userProfile"
+                  label="User Profile"
+                />
+              </div>
+              <div class="col-8 q-pa-xs">
+                <q-input
+                  type="textarea"
+                  v-model="createdLicense"
+                  label="License Infos"
+                />
+              </div>
+            </div>
+          </q-card-section>
+
+          <q-card-actions align="right">
+            <q-btn
+              flat
+              label="Generate"
+              color="primary"
+              @click="generateLicenseInfo()"
+            />
+
+            <q-btn
+              flat
+              label="Send"
+              color="primary"
+              @click="sendLicenseInfo()"
+            />
+            <q-btn flat label="Close" color="primary" v-close-popup />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
     </q-page-container>
     <q-footer>
       <q-bar dense class="bg-grey glossy" style="height:3vh">
@@ -94,9 +173,6 @@
           <q-tooltip>Chords</q-tooltip>
           <q-icon name="fas fa-guitar"></q-icon>
         </q-btn>
-
-
-    
 
         <q-btn
           round
@@ -167,7 +243,7 @@
               <q-item
                 clickable
                 v-ripple
-                v-for="(client, index) in activeClients"
+                v-for="(client, index) in onlineClients"
                 :key="index"
               >
                 <q-item-section>{{ client }}</q-item-section>
@@ -179,24 +255,33 @@
             floating
             style="padding:2px; font-size:8px; line-height:8px"
           >
-            {{ activeClients.length }}
+            {{ onlineClients.length }}
           </q-badge>
         </q-btn>
+        <q-btn
+          flat
+          v-if="licenseInfo.userEmail === 'scarioti@gmail.com'"
+          icon="fas fa-user"
+          dense
+          @click="creatorDialog = true"
+        ></q-btn>
       </q-bar>
     </q-footer>
   </q-layout>
 </template>
 
 <script>
+import moment from "moment";
 import PreferencesDialog from "../components/dialogs/PreferencesDialog";
 import RegisterDialog from "../components/dialogs/RegisterDialog";
+import SimpleCrypto from "simple-crypto-js";
+
 export default {
   name: "WorshipStudio",
   components: { RegisterDialog, PreferencesDialog },
   mounted() {
- 
-    this.link = sessionStorage.getItem('link') === "true"
- 
+    this.link = sessionStorage.getItem("link") === "true";
+
     this.loadLicenseInfo().then(() => {
       this.loadPreferences().then(() => {
         this.$router.push({ path: "/" + this.preferences.startModule });
@@ -215,11 +300,10 @@ export default {
       this.loadPreferences();
     });
 
- 
     this.$bus.$on("remove-from-playlist", index => {
       this.playlist.items.splice(index, 1);
     });
- 
+
     this.$root.$on("close-register-dialog", () => {
       this.loadLicenseInfo();
       this.registerDialog = false;
@@ -239,7 +323,7 @@ export default {
     client: function(data) {
       let moment = require("moment");
       let nowTime = moment();
- 
+
       this.clients[data.pcName] = data.time;
       let clients = [];
       Object.keys(this.clients).forEach(key => {
@@ -255,8 +339,10 @@ export default {
   data() {
     return {
       link: false,
+
       registerDialog: false,
       preferencesDialog: false,
+      creatorDialog: false,
       preferences: {
         computerName: null,
         showChords: true,
@@ -274,7 +360,20 @@ export default {
       text: true,
       slidewindow: true,
       black: false,
-     
+      licenseCreator: {
+        fromClient: true,
+        licenseExpiration: "2019-12-21",
+        licenseID: "907e73c8e4fc4c0fc114922aa9002771",
+        licenseType: "church",
+        orgEmail: "scarioti@gmail.com",
+        orgName: "Chiesa Evangelica della Riconciliazione Catanzaro",
+        sector: "907e73c8e4fc4c0fc114922aa900cd86",
+        sectors: ["all"],
+        userEmail: "scarioti@gmail.com",
+        userName: "Simonpietro Carioti",
+        userProfile: "superadmin"
+      },
+      createdLicense: null
     };
   },
   methods: {
@@ -306,11 +405,41 @@ export default {
     },
     presence() {
       //console.log("presence", this.$moment.format());
-      this.$socket.emit("presence", {
-        pcName: this.preferences.computerName,
-        sector: this.licenseInfo.sector,
-        time: this.$ws.currentTime()
-      });
+      /*
+      if(this.$socket.connected){
+        this.$socket.emit("presence", {
+          pcName: this.preferences.computerName,
+          sector: this.licenseInfo.sector,
+          time: this.$ws.currentTime()
+        });
+      }
+      */
+
+      this.$pouchRemoteApp
+        .find({
+          selector: {
+            sector: this.licenseInfo.sector
+          }
+        })
+        .then(docs => {
+          if (docs.docs.length === 0) {
+            console.log("Nessun Computer Collegato");
+            let computer = {};
+            computer[this.preferences.computerName] = this.$ws.currentTime();
+            this.$pouchRemoteApp.post({
+              sector: this.licenseInfo.sector,
+              computers: computer
+            });
+          } else {
+            let presenceRecord = docs.docs[0];
+            presenceRecord.computers[
+              this.preferences.computerName
+            ] = this.$ws.currentTime();
+            this.$pouchRemoteApp.put(presenceRecord).then(presenceDocs => {
+              this.activeClients = presenceRecord.computers;
+            });
+          }
+        });
     },
     openFullScreen(id, edit) {
       this.$socket.emit("openSong", {
@@ -329,7 +458,46 @@ export default {
         this.openFullScreen(song._id, false);
       });
     },
-   
+    generateLicenseInfo() {
+      var secret = this.licenseCreator.orgEmail;
+
+      var simpleCrypto = new SimpleCrypto(secret);
+      var string = JSON.stringify(this.licenseCreator);
+
+      var chiperText = simpleCrypto.encrypt(string);
+
+      this.createdLicense =
+        "License Email: " +
+        this.licenseCreator.orgEmail +
+        "\n\n" +
+        "License Key:\n" +
+        chiperText;
+    },
+    sendLicenseInfo() {
+      if (this.createdLicense === null) {
+        alert("Nessuna licena generata");
+        return;
+      }
+
+      if (confirm("Inviare i dati di licenza via email?")) {
+        this.$axios.post(
+          "http://www.simonpietro.it/worshipstudio/downloads/sendmail.php",
+          {
+            license: this.createdLicense,
+            licenseCreator: this.licenseCreator
+          },
+          {
+            headers: {
+              // 'application/json' is the modern content-type for JSON, but some
+              // older servers may use 'text/json'.
+              // See: http://bit.ly/text-json
+              "content-type": "text/json"
+            }
+          }
+        ),
+          (this.createdLicense = null);
+      }
+    }
   },
   computed: {
     userLabel() {
@@ -337,14 +505,24 @@ export default {
         ? this.licenseInfo.orgName + " - " + this.licenseInfo.userName
         : "";
     },
-    playlist(){
-       return JSON.parse(sessionStorage.getItem("playlist"));
+    playlist() {
+      return JSON.parse(sessionStorage.getItem("playlist"));
+    },
+    onlineClients() {
+      let adesso = moment();
+      let n = 0;
+      let clients = [];
+      Object.keys(this.activeClients).forEach(key => {
+        if (adesso.diff(moment(this.activeClients[key]), "seconds") < 10) {
+          clients.push(key);
+        }
+      });
+      return clients;
     }
-  
   },
   watch: {
-    link(){
-      sessionStorage.setItem('link', this.link)
+    link() {
+      sessionStorage.setItem("link", this.link);
     },
     text() {
       this.$renderer.send("text", this.text);

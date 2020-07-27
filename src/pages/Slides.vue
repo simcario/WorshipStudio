@@ -61,17 +61,19 @@
                     >
                       <div v-for="(song, index) in playlist.items" :key="index">
                         <q-item
+                          dense
                           clickable
                           v-ripple
                           :active="song === currentSong"
                           active-class="bg-grey-8 text-white"
                           style="padding: 0px 16px;"
-                          @click="openSong(song.id)"
+                          @click="openSong(song._id)"
                         >
                           <q-menu touch-position context-menu>
                             <!-- Context Menu -->
                             <q-list dense style="min-width: 100px">
                               <q-item
+                                dense
                                 clickable
                                 v-close-popup
                                 @click="removeFromPlaylist(index)"
@@ -122,7 +124,7 @@
                           </q-list>
                         </q-menu>
                         <q-item-section>
-                          <q-item-label>{{ pl.title }}</q-item-label>
+                          <q-item-label>{{ pl.name }}</q-item-label>
                           <q-item-label caption>
                             Created by
                             <strong>{{ pl.createdBy }}</strong>
@@ -141,9 +143,23 @@
                   icon="fas fa-save"
                   color="white"
                   @click="playListNameDialog = true"
+                   v-if="
+                licenseInfo.userProfile === 'superadmin' ||
+                  licenseInfo.userProfile === 'admin' ||
+                  licenseInfo.userProfile === 'worshipleader'
+              "
                 >
                   <q-tooltip>Save Playlist</q-tooltip>
                 </q-btn>
+                 <q-btn
+              flat
+              round
+              icon="fas fa-ban"
+              color="white"
+              @click="playlist.items = []"
+            >
+              <q-tooltip>{{ $t("clear_playlist") }}</q-tooltip>
+            </q-btn>
               </q-bar>
             </q-card>
           </pane>
@@ -287,11 +303,28 @@ export default {
   },
   mounted() {
     this.getCloudPlaylists();
+    this.$bus.$on("loadplaylist", () => {
+      this.getCloudPlaylists();
+    });
     this.reloadSongs();
 
-    this.$root.$once("library-double-click", id => {
+    this.$root.$on("library-double-click", id => {
       this.$store.dispatch("defaultModule/setCurrentSong", id);
       this.openSong(id);
+    });
+
+    this.$bus.$on("linkAction", action => {
+      if (
+        action.doc.actions.openSong !== undefined &&
+        action.doc.actions.openSong.computer !==
+          this.preferences.computerName &&
+        this.link === true
+      ) {
+        this.$q.notify(
+          action.doc.actions.openSong.computer + " ha aperto un brano"
+        );
+        this.openSong(action.doc.actions.openSong.songID);
+      }
     });
     this.$root.$once("edit-song", id => {
       console.log("EDIT SONG");
@@ -636,13 +669,18 @@ export default {
     playlist() {
       return this.$store.getters["defaultModule/getCurrentPlaylist"];
     },
-
+  licenseInfo() {
+      return this.$parent.$parent.$parent.$data.licenseInfo;
+    },
     slideTemplatesById() {
       let templates = {};
       this.slideTemplates.forEach(template => {
         templates[template._id] = template;
       });
       return templates;
+    },
+    preferences() {
+      return this.$parent.$parent.$parent.$data.preferences;
     }
   },
   watch: {

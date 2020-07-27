@@ -62,7 +62,7 @@
               name="currentPlaylist"
               style="padding:0px; overflow-y:auto"
             >
-              <q-list dark class="bg-grey-9">
+              <q-list dense dark class="bg-grey-9">
                 <draggable
                   class="list-group bg-grey-9"
                   tag="div"
@@ -73,6 +73,7 @@
                     <q-item
                       clickable
                       v-ripple
+                      dense
                       :active="song === currentSong"
                       active-class="bg-grey-8 text-white"
                       style="padding: 0px 16px;"
@@ -121,6 +122,11 @@
                           clickable
                           v-close-popup
                           @click="removeCloudPlaylist(pl)"
+                          v-if="
+                            licenseInfo.userProfile === 'superadmin' ||
+                              licenseInfo.userProfile === 'admin' ||
+                              licenseInfo.userProfile === 'worshipleader'
+                          "
                         >
                           <q-item-section avatar>
                             <q-icon size="16px" name="fas fa-trash-alt" />
@@ -149,6 +155,11 @@
               icon="fas fa-save"
               color="white"
               @click="playListNameDialog = true"
+              v-if="
+                licenseInfo.userProfile === 'superadmin' ||
+                  licenseInfo.userProfile === 'admin' ||
+                  licenseInfo.userProfile === 'worshipleader'
+              "
             >
               <q-tooltip>{{ $t("save_playlist") }}</q-tooltip>
             </q-btn>
@@ -166,20 +177,27 @@
       </pane>
       <pane size="75">
         <q-tabs dense v-model="selectedViewTab" class="text-white">
-          <q-tab name="preview" icon="far fa-file-image" label="Preview" />
-          <q-tab name="alarms" icon="fas fa-stream" label="Multitracks" />
+          <q-tab
+            name="preview"
+            icon="far fa-file-image"
+            :label="$t('preview')"
+          />
+          <!--  <q-tab name="alarms" icon="fas fa-stream" label="Multitracks" /> -->
         </q-tabs>
         <q-tab-panels v-model="selectedViewTab">
           <q-tab-panel name="preview" style="padding:0px">
-            <q-card style="height:98vh;">
-              <q-card-section v-if="currentSong !== null" class="q-pa-xs">
-                <div
-                  class="column"
-                  style="height:94vh; "
-                  v-if="selectedSong !== null"
-                >
+            <q-card style="overflow:scroll; height:95vh"  ref="printMe">
+              <q-card-section
+                v-if="currentSong !== null"
+                class="q-pa-xs"
+               
+              >
+                <div style="text-align:center">
+                  <h4>{{ selectedSong.title }}</h4>
+                </div>
+                <div class="row" v-if="selectedSong !== null">
                   <div
-                    class="col-auto  q-pb-md"
+                    class="col-12  q-pb-md"
                     style="margin:0px"
                     v-for="(section, index) in selectedSong.sections"
                     :key="index"
@@ -202,8 +220,41 @@
                     />
                   </div>
                 </div>
+               
                 <!-- Song Items -->
               </q-card-section>
+
+              <q-btn-group
+                rounded
+                style="margin-bottom:30px;"
+                class="fixed-bottom-right"
+                :class="{ trasparency: !isHovering }"
+                @mouseenter="isHovering = true"
+                @mouseleave="isHovering = false"
+              >
+                <q-btn
+                  color="red"
+                  rounded
+                  glossy
+                  icon="fab fa-youtube"
+                  v-if="
+                    selectedSong !== null && selectedSong.youtube !== undefined
+                  "
+                  @click="$renderer.send('open-link', selectedSong.youtube)"
+                />
+                <q-btn
+                  color="orange"
+                  rounded
+                  glossy
+                  icon="fab fa-soundcloud"
+                  v-if="
+                    selectedSong !== null &&
+                      selectedSong.soundcloud !== undefined
+                  "
+                  @click="$renderer.send('open-link', selectedSong.soundcloud)"
+                />
+              </q-btn-group>
+             
             </q-card>
           </q-tab-panel>
         </q-tab-panels>
@@ -235,6 +286,9 @@ import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
 import WaveSurfer from "wavesurfer.js";
 import regions from "../../node_modules/wavesurfer.js/dist/plugin/wavesurfer.regions";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import html2pdf from "html2pdf.js";
 WaveSurfer.regions = regions;
 export default {
   name: "Chords",
@@ -260,8 +314,12 @@ export default {
     this.$renderer.on("F5", evt => {
       this.playlistSong(0);
     });
+
     this.$renderer.send("hide-slide-window");
     this.getCloudPlaylists();
+    this.$bus.$on("loadplaylist", () => {
+      this.getCloudPlaylists();
+    });
     this.$root.$once("set-pad", name => {
       if (this.currentSong !== null) {
         this.$store.dispatch("defaultModule/setSongPad", {
@@ -278,11 +336,20 @@ export default {
       this.$store.dispatch("defaultModule/setCurrentSong", id);
       this.openSong(id);
     });
+    this.$root.$on("library-print", id => {
+      this.$store.dispatch("defaultModule/setCurrentSong", id);
+      this.openSong(id).then(() => {
+        this.print();
+      });
+    });
     this.$root.$once("library-double-click", id => {
       this.openFullScreen(id, false);
     });
     this.$root.$once("edit-song", id => {
       this.openFullScreen(id, true);
+    });
+    this.$root.$once("reader", id => {
+      this.openReader(id);
     });
     this.$bus.$once("update-playlist", playlist => {
       this.currentPlaylistTitle = playlist.name; //TODO Update playlist (with ID) ad replicate on Slides
@@ -322,6 +389,20 @@ export default {
     this.$bus.$once("loading", loading => {
       this.loading = loading;
     });
+
+    this.$bus.$on("linkAction", action => {
+      if (
+        action.doc.actions.openSong !== undefined &&
+        action.doc.actions.openSong.computer !==
+          this.preferences.computerName &&
+        this.link === true
+      ) {
+        this.$q.notify(
+          action.doc.actions.openSong.computer + " ha aperto un brano"
+        );
+        this.openFullScreen(action.doc.actions.openSong.songID, false);
+      }
+    });
   },
   sockets: {
     connect: function() {
@@ -346,6 +427,7 @@ export default {
       currentPlaylistTitle: null,
       currentSong: null,
       currentSongRef: null,
+      isHovering: false,
       loading: false,
       newSongDialog: false,
       padLoading: false,
@@ -473,8 +555,11 @@ export default {
     },
 
     openSong(id) {
-      this.selectedSlideIndex = null;
-      this.currentSong = id;
+      return new Promise((res, rej) => {
+        this.selectedSlideIndex = null;
+        this.currentSong = id;
+        res("ok");
+      });
     },
     editSong(song) {
       this.songEdit = true;
@@ -512,22 +597,39 @@ export default {
       });
     },
     openFullScreen(id, edit) {
+      /*
       this.$socket.emit("openSong", {
         sector: this.licenseInfo.sector,
         id: id,
         name: this.preferences.computerName
       });
+      */
+      this.$ws.linkAction({
+        action: "openSong",
+        songID: id,
+        computerName: this.preferences.computerName,
+        sector: this.licenseInfo.sector
+      });
 
-      let path = "ViewEditSong/" + id + "/" + edit;
+      let path = "ViewEditSong/" + id + "/" + edit + "/" + this.link;
 
       this.$router.push({ path: path });
       return;
     },
 
     playlistSong(index) {
+      console.log(
+        "selectedVErsion",
+        this.playlist.items[index].selectedVersion
+      );
+      let selectedVersion =
+        this.playlist.items[index].selectedVersion !== undefined
+          ? this.playlist.items[index].selectedVersion
+          : null;
       this.$store.dispatch("defaultModule/setPlaylistIndex", index);
+      this.$store.dispatch("defaultModule/setSongVersion", selectedVersion);
 
-      this.$ws.getSong(this.playlist.items[index].id).then(song => {
+      this.$ws.getSong(this.playlist.items[index]._id).then(song => {
         this.openFullScreen(song._id, false);
       });
     },
@@ -592,6 +694,38 @@ export default {
 
       playlist.items.splice(index, 1);
       this.$store.dispatch("defaultModule/setPlaylist", playlist);
+    },
+    print() {
+      const el = this.$refs.printMe.$el;
+      console.log(el);
+
+      var opt = {
+        margin: 0.4,
+        filename: this.selectedSong.title + ".pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 1 },
+        jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+        
+      };
+
+      // New Promise-based usage:
+      html2pdf()
+        .set(opt)
+        .from(el.innerHTML)
+        .save();
+      /*
+      html2canvas(el)
+        .then(canvas => {
+          var imgdata = canvas.toDataURL("image/png");
+          var doc = new jsPDF();
+          doc.addImage(imgdata, "PNG", 10, 10);
+          doc.save("output.pdf");
+        })
+        .catch(error => {
+          console.log(error);
+          alert("Error descargando el reporte visual");
+        });
+        */
     }
   },
   computed: {
@@ -1086,7 +1220,9 @@ export default {
         const extensions = [
           "m",
           "m7",
+          "2",
           "7",
+          "7+",
           "dim",
           "sus4",
           "sus9",
@@ -1290,6 +1426,10 @@ export default {
 }
 </style>
 <style scoped>
+.trasparency {
+  opacity: 0.3;
+}
+
 .songText {
   font-size: 18px;
   padding-top: 18px;

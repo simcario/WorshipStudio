@@ -5,5 +5,6 @@ export default {
     name: null,
     items: []
   },
+  songVersion:null
 
 }

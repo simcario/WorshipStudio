@@ -2,7 +2,7 @@ import Vue from "vue";
 import axios from "axios";
 import SimpleCrypto from "simple-crypto-js";
 import { Notify } from "quasar";
-import vueScreenSizeUmd from "vue-screen-size";
+import {version} from '../../package.json'
 
 const bus = new Vue();
 
@@ -24,10 +24,10 @@ export const ws_helpers = {
               objectType: "preferences",
               data: {
                 showChords: true,
-                startModule:'Chords',
+                startModule: "Chords",
                 computerName: uniqid("DESKTOP-"),
-                language:'en',
-                notation:'anglo'
+                language: "en",
+                notation: "anglo"
               }
             };
             Vue.prototype.$pouchApp.post(pref);
@@ -58,7 +58,7 @@ export const ws_helpers = {
           }
         })
         .then(docs => {
-      
+          console.log(docs)
           if (docs.docs.length > 0) {
             res(docs.docs[0].data);
           } else {
@@ -96,117 +96,168 @@ export const ws_helpers = {
     });
   },
   allSongs(str) {
-  
     return new Promise(res => {
-      
       Vue.prototype.$pouchSongs
         .find({
           selector: {
             searchref: { $regex: str.toLowerCase() }
           },
           sort: ["searchref"],
-          use_index:"searchrefindex"
+          use_index: "searchrefindex"
         })
         .then(songs => {
           res(songs.docs);
         });
     });
   },
-  getSong(id){
-
-    return new Promise(res=>{
-      Vue.prototype.$pouchSongs.get(id).then(doc=>{
-        res(doc)
-      })
-    })
+  getSong(id) {
+    return new Promise(res => {
+      Vue.prototype.$pouchSongs.get(id).then(doc => {
+        res(doc);
+      });
+    });
   },
   sync() {
-   return new Promise(resolve=>{
-    Vue.prototype.$bus.$emit('status',{
-      message:"Synchronization...",
-      color:'yellow',
-      textColor:'black'
-    })
-      this.getLicense().then(licenseInfo=>{
+    let sync = false;
+    let sync2 = false;
+    return new Promise(resolve => {
+      Vue.prototype.$bus.$emit("status", {
+        message: "Synchronization...",
+        color: "yellow",
+        textColor: "black"
+      });
+      this.getLicense().then(licenseInfo => {
         console.log("Sync Songs");
+
+        Vue.prototype.$pouchRemoteApp
+          .changes({
+            since: "now",
+            live: true,
+            include_docs: true
+          })
+          .on("change", function(change) {
+            Vue.prototype.$bus.$emit("linkAction", change);
+          })
+          .on("complete", function(info) {
+            console.log("complete", info);
+          })
+          .on("error", function(err) {
+            console.log("error", err);
+          });
+
+        console.log("License ID", licenseInfo.licenseID);
         Vue.prototype.$pouchSongs
-        .sync(Vue.prototype.$pouchRemoteSongs, 
-          { 
+          .sync(Vue.prototype.$pouchRemoteSongs, {
             live: true,
             retry: true,
-            filter: 'app/by_license',
-            query_params: {licenseID: licenseInfo.licenseID}
+            filter: "app/by_license",
+            query_params: { licenseID: licenseInfo.licenseID }
           })
-        .on("change", function(change) {
-          console.log("Songs Change", change);
-        })
-        .on("paused", function(info) {
-          console.log(info)
-          console.log("Sync Playlist");
-          Vue.prototype.$pouchPlaylists
-            .sync(Vue.prototype.$pouchRemotePlaylists, 
-              { 
-                live: true, 
-                retry: true,
-            
-              })
-            .on("change", function(change) {
-              console.log("Playlist Change", change);
-            })
-            .on("paused", function(info) {
-              Vue.prototype.$bus.$emit('status',{
-                message:"Synchronization Complete",
-                color:'grey',
-                textColor:'white'
-              })
-              resolve("ok")
-            })
-            .on("active", function(info) {
-              console.log("Playlist active", info);
-            })
-            .on("error", function(err) {
-              console.log("Playlist error", err);
+          .on("paused", function(info) {
+            Vue.prototype.$bus.$emit("status", {
+              message: "Synchronization Complete",
+              color: "grey",
+              textColor: "white"
             });
-          
-        })
-        .on("active", function(info) {
-          console.log("Songs active", info);
-        })
-        .on("complete", function(info) {
-          console.log("Songs complete", info);
-        })
-        .on("error", function(err) {
-          console.log("Songs error", err);
-        });
-  
-    
-      })
-   })
-    
-    
+
+            console.log("Songs pused");
+            if (sync === false) {
+              Vue.prototype.$bus.$emit("loadsongs");
+              sync = true;
+            }
+
+            Vue.prototype.$pouchPlaylists
+              .sync(Vue.prototype.$pouchRemotePlaylists, {
+                live: true,
+                retry: true
+              })
+              .on("paused", function(info) {
+                console.log("Playlist Paused");
+                if (sync2 === false) {
+                  Vue.prototype.$bus.$emit("loadplaylist");
+                  Vue.prototype.$bus.$emit("status", {
+                    message: "Synchronization Complete",
+                    color: "grey",
+                    textColor: "white"
+                  });
+                  sync2 = true;
+                }
+                resolve("ok");
+              })
+              .on("complete", function(info) {
+                console.log("Playlist Completed");
+                if (sync2 === false) {
+                  Vue.prototype.$bus.$emit("loadplaylist");
+                  Vue.prototype.$bus.$emit("status", {
+                    message: "Synchronization Complete",
+                    color: "grey",
+                    textColor: "white"
+                  });
+                  sync2 = true;
+                }
+                resolve("ok");
+              })
+
+              .on("error", function(err) {
+                console.log("Playlist error", err);
+              });
+          })
+          .on("complete", function(err) {
+            console.log("Songs Complete");
+          })
+          .on("error", function(err) {
+            console.log("Songs error", err);
+          });
+      });
+    });
   },
   deleteSong(song) {
     return new Promise((res, rej) => {
-      song._deleted = true
-      Vue.prototype.$pouchSongs.put(song).then(()=>{
+      song._deleted = true;
+      Vue.prototype.$pouchSongs.put(song).then(() => {
         res("ok");
       });
-     
     });
   },
   checkLicense(licenseKey, email) {
     return new Promise((res, rej) => {
       const simpleCrypto = new SimpleCrypto(email);
-      try{
-      const decryptedKey = simpleCrypto.decrypt(licenseKey);
-      res(JSON.parse(decryptedKey))
-    } catch {
-      console.log("ERRORE")
-    }
-      
-    
-      
+      try {
+        const decryptedKey = simpleCrypto.decrypt(licenseKey);
+        res(JSON.parse(decryptedKey));
+      } catch {
+        console.log("ERRORE");
+      }
     });
+  },
+  checkUpdate(){
+
+    return new Promise((res, rej)=>{
+
+
+      axios("http://www.simonpietro.it/worshipstudio/downloads/version.php")
+    .then(({ data }) => {
+      let local = version.split(".");
+      let remote = data.version.split(".");
+      if (
+        parseInt(remote[0]) > parseInt(local[0]) ||
+        parseInt(remote[1]) > parseInt(local[1]) ||
+        parseInt(remote[2]) > parseInt(local[2])
+      ) {
+        res({
+          update:true,
+          features:data.new_features
+        })
+      } else {
+        res( {
+          update:false
+        })
+      }
+    });
+
+    })
+
+    
   },
   loadFile() {
     return new Promise((res, rej) => {
@@ -245,32 +296,30 @@ export const ws_helpers = {
           res("");
           return;
         }
-   
-        if ( playlist._id === undefined) {
-          let playlistSave = JSON.parse(JSON.stringify(playlist))
+
+        if (playlist._id === undefined) {
+          let playlistSave = JSON.parse(JSON.stringify(playlist));
           playlistSave.name = title;
           playlistSave.licenseID = license.licenseID;
           playlistSave.createdBy = license.userName;
           playlistSave.email = license.userEmail;
-          playlistSave.sector =license.sector; 
+          playlistSave.sector = license.sector;
 
-          Vue.prototype.$pouchPlaylists
-            .post(
-              playlistSave
-            )
-            .then(doc => {
-              Vue.prototype.$pouchPlaylists.get(doc.id).then(pl=>{
-                   Vue.prototype.$store.dispatch('defaultModule/setPlaylist', pl)
-                res(pl);
-              })
+          Vue.prototype.$pouchPlaylists.post(playlistSave).then(doc => {
+            Vue.prototype.$pouchPlaylists.get(doc.id).then(pl => {
+              Vue.prototype.$store.dispatch("defaultModule/setPlaylist", pl);
+              res(pl);
             });
+          });
         } else {
-          let playlistSave = JSON.parse(JSON.stringify(playlist))
-          Vue.prototype.$pouchPlaylists
-          .put(playlistSave).then(()=>{
-            Vue.prototype.$store.dispatch('defaultModule/setPlaylist', playlistSave)
+          let playlistSave = JSON.parse(JSON.stringify(playlist));
+          Vue.prototype.$pouchPlaylists.put(playlistSave).then(() => {
+            Vue.prototype.$store.dispatch(
+              "defaultModule/setPlaylist",
+              playlistSave
+            );
             res(playlistSave);
-          })
+          });
         }
         // console.log(playlistData)
         Notify.create({
@@ -288,7 +337,7 @@ export const ws_helpers = {
       Vue.prototype.$pouchPlaylists
         .get(playlist._id)
         .then(doc => {
-          doc._deleted = true
+          doc._deleted = true;
           Vue.prototype.$pouchPlaylists.put(doc);
         })
         .then(() => {
@@ -301,12 +350,11 @@ export const ws_helpers = {
       Vue.prototype.$pouchPlaylists
         .allDocs({ include_docs: true })
         .then(docs => {
-       
           let cloud = [];
           docs.rows.forEach(row => {
-            console.log("CLOUD PL:",row )
+            console.log("CLOUD PL:", row);
             let playlist = row.doc;
-    
+
             cloud.push(playlist);
           });
           res(cloud);
@@ -325,7 +373,10 @@ export const ws_helpers = {
           label: "Yes",
           color: "yellow",
           handler: () => {
-            Vue.prototype.$store.dispatch('defaultModule/setPlaylist',playlist)
+            Vue.prototype.$store.dispatch(
+              "defaultModule/setPlaylist",
+              playlist
+            );
           }
         },
         {
@@ -339,7 +390,6 @@ export const ws_helpers = {
   appQuit() {
     Vue.prototype.$renderer.send("app-quit");
   },
-
   appMinimize() {
     Vue.prototype.$renderer.send("app-minimize");
   },
@@ -443,7 +493,6 @@ export const ws_helpers = {
       };
     }
   },
-
   getSlideTextColor(songId, index) {
     let songsLocalSettings =
       JSON.parse(localStorage.getItem("songsLocalSettings")) || {};
@@ -462,5 +511,31 @@ export const ws_helpers = {
         color: "white"
       };
     }
+  },
+  linkAction(action) {
+    //console.log("linkAction", action);
+    let actions = {};
+    actions[action.action] = {
+      songID: action.songID,
+      computer: action.computerName
+    };
+    Vue.prototype.$pouchRemoteApp
+      .find({
+        selector: {
+          sector: action.sector
+        }
+      })
+      .then(docs => {
+        if (docs.docs.length === 0) {
+          Vue.prototype.$pouchRemoteApp.post({
+            sector: action.sector,
+            actions: actions
+          });
+        } else {
+          let actionRecord = docs.docs[0];
+          actionRecord.actions = actions;
+          Vue.prototype.$pouchRemoteApp.put(actionRecord);
+        }
+      });
   }
 };

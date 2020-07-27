@@ -9,16 +9,16 @@ export function setPlaylistIndex(context, index) {
   context.commit("retrieveCurrentPlaylistIndex", index)
 }
 
+export function setSongVersion(context, version) {
+  sessionStorage.setItem('songVersion',version)
+
+  context.commit("retrieveSongVersion", version)
+}
+
 export function addToPlaylist(context, song){
   let playlist = JSON.parse(sessionStorage.getItem("playlist"));
 
-
-      let sng = {}
-      sng['title'] = song.title
-      sng['author'] = song.author
-      sng['number'] = song.number
-      sng['id'] = song._id
-    playlist.items.push(sng);
+    playlist.items.push(song);
 
     sessionStorage.setItem("playlist", JSON.stringify(playlist));
     context.commit("retrievePlaylist", playlist)
