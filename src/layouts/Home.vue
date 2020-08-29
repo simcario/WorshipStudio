@@ -3,7 +3,7 @@
     <q-dialog v-model="updateAlert">
       <q-card>
         <q-card-section>
-          <div class="text-h6">New Version Available</div>
+          <div class="text-h6">{{ $t("new_version_available")}}</div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
@@ -47,6 +47,7 @@ export default {
       this.$ws.checkUpdate().then(data=>{
         if(data.update === true){
           this.updateAlert = true
+          this.newFeatures = data.features
         } else {
           this.gotoApp()
         }

@@ -50,8 +50,7 @@
               ]"
             />
           </div>
-        </div>
-        <div class="row justify-center">
+      
           <div class="col-6">
             Notation <br />
             <q-btn-toggle
@@ -78,6 +77,21 @@
               </q-list>
             
             </q-btn-dropdown>
+          </div>
+
+           <div class="col-6">
+            Cords Background<br>
+            <q-btn-toggle
+              v-model="chordsBackground"
+              push
+              glossy
+              toggle-color="primary"
+              :options="[
+                { label: 'Dark', value: 'dark' },
+                { label: 'White', value: 'white' }
+              ]"
+            />
+         
           </div>
         </div>
       </q-card-section>
@@ -111,6 +125,7 @@ export default {
       this.startModule = pref.data.startModule;
       this.notation = pref.data.notation;
       this.language = pref.data.language;
+      this.chordsBackground = pref.data.chordsBackground
       this.id = pref._id;
     });
   },
@@ -118,6 +133,7 @@ export default {
     return {
       computerName: null,
       showChords: true,
+      chordsBackground:'dark',
       startModule: "Chords",
       notation: "anglo",
       language: "en",
@@ -137,6 +153,7 @@ export default {
           computerName: this.computerName,
           showChords: this.showChords,
           startModule: this.startModule,
+          chordsBackground:this.chordsBackground,
           notation: this.notation,
           language: this.language
         };

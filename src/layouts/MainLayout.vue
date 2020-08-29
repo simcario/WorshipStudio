@@ -184,6 +184,7 @@
           <q-tooltip>Slides</q-tooltip>
           <q-icon name="slideshow"></q-icon>
         </q-btn>
+        <!--
         <q-btn
           round
           flat
@@ -193,10 +194,12 @@
         >
           <q-icon name="fas fa-tablet-alt"></q-icon>
         </q-btn>
+        
         <q-btn round flat icon @click="$ws.sync()">
           <q-tooltip>Syncronize</q-tooltip>
           <q-icon name="fas fa-sync-alt"></q-icon>
         </q-btn>
+        -->
         <q-btn round flat icon @click="preferencesDialog = true">
           <q-tooltip>Preferences</q-tooltip>
           <q-icon name="fas fa-cog"></q-icon>
@@ -467,6 +470,8 @@ export default {
       var chiperText = simpleCrypto.encrypt(string);
 
       this.createdLicense =
+        'Download from: <a href="http://www.simonpietro.it/worshipstudio/downloads/WorshipStudio.exe">http://www.simonpietro.it/worshipstudio/downloads/WorshipStudio.exe</a>' + "\n\n" +
+        'Instructions from: <a href="http://www.simonpietro.it/worshipstudio/downloads/Istruzioni.docx">http://www.simonpietro.it/worshipstudio/downloads/Istruzioni.docx</a>' + "\n\n" +
         "License Email: " +
         this.licenseCreator.orgEmail +
         "\n\n" +

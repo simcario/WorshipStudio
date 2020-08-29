@@ -129,7 +129,7 @@ export default {
               doc.data = data
             this.$pouchApp.put(doc)
             }
-            
+            this.$root.$emit('close-register-dialog')
           })
         })
     }

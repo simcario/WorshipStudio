@@ -1,5 +1,5 @@
 <template>
-  <q-card dark class="bg-grey-9" style="width:100%; height:48vh">
+  <q-card dark class="bg-grey-9" style="width:100%; height:48vh; ">
     <q-bar dense class="bg-grey-10">{{ $t("library") }}</q-bar>
     <q-card-section style="height:43px ;padding:0px;overflow:hidden">
       <q-input filled dense dark :label="$t('search')" v-model="searchText">
@@ -12,125 +12,124 @@
       </q-input>
     </q-card-section>
     <q-card-section class="scroll" style="padding:0px;">
-      <q-virtual-scroll style="max-height: 300px;" :items="songs" separator>
-        <template v-slot="{ item, index }">
-          <q-item
-            :key="index"
-            clickable
-            v-ripple
-            :dense="item.versions === undefined"
-            :active="item._id === currentSong"
-            active-class="bg-grey-8 text-white"
-            style="padding: 0px 16px;"
-            @click="$root.$emit('library-single-click', item._id)"
-            @dblclick.once="$root.$emit('library-double-click', item._id)"
-          >
-            <q-menu touch-position context-menu>
-              <!-- Context Menu -->
-              <q-list dense style="min-width: 100px">
-                <q-item
-                  clickable
-                  v-close-popup
-                  @click="$root.$emit('library-double-click', item._id)"
-                >
-                  <q-item-section avatar>
-                    <q-icon size="16px" name="fas fa-external-link-alt" />
-                  </q-item-section>
-                  <q-item-section>{{ $t("open") }}</q-item-section>
-                </q-item>
-                 <q-item
-                  clickable
-                  v-close-popup
-                  @click="$root.$emit('library-print', item._id)"
-                >
-                  <q-item-section avatar>
-                    <q-icon size="16px" name="fas fa-print" />
-                  </q-item-section>
-                  <q-item-section>{{ $t("print") }}</q-item-section>
-                </q-item>
-
-                <q-item
-                  clickable
-                  v-close-popup
-                  @click="$root.$emit('edit-song', item._id)"
-                  v-if="
-                    licenseInfo.userProfile === 'superadmin' ||
-                      licenseInfo.userProfile === 'admin' ||
-                      licenseInfo.userProfile === 'worshipleader'
-                  "
-                >
-                  <q-item-section avatar>
-                    <q-icon size="16px" name="fas fa-edit" />
-                  </q-item-section>
-                  <q-item-section>{{ $t("edit") }}</q-item-section>
-                </q-item>
-                <q-item
-                  clickable
-                  v-close-popup
-                  @click="openDeleteDialog(item)"
-                  v-if="
-                    licenseInfo.userProfile === 'superadmin' ||
-                      licenseInfo.userProfile === 'admin' ||
-                      licenseInfo.userProfile === 'worshipleader'
-                  "
-                >
-                  <q-item-section avatar>
-                    <q-icon size="16px" name="fas fa-trash-alt" />
-                  </q-item-section>
-                  <q-item-section>{{ $t("delete") }}</q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item
-                  clickable
-                  v-close-popup
-                  @click="openPad(item._id)"
-                  v-if="
-                    licenseInfo.userProfile === 'superadmin' ||
-                      licenseInfo.userProfile === 'admin' ||
-                      licenseInfo.userProfile === 'worshipleader'
-                  "
-                >
-                  <q-item-section avatar>
-                    <q-icon size="16px" name="fas fa-volume-off" />
-                  </q-item-section>
-                  <q-item-section>{{ $t("choose_pad") }}</q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item clickable v-close-popup @click="addToPlaylist(item)">
-                  <q-item-section avatar>
-                    <q-icon size="16px" name="fas fa-list" />
-                  </q-item-section>
-                  <q-item-section>{{ $t("add_to_playlist") }}</q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-            <q-item-section>
-              <q-item-label style="font-weight:bold">{{
-                item.title
-              }}</q-item-label>
-              <q-item-label caption class="text-white">{{
-                item.author
-              }}</q-item-label>
-            </q-item-section>
-            <q-item-section
-              top
-              side
-              class="text-white"
-              v-if="item.versions !== undefined"
-            >
-              <q-badge
-                color="blue"
-                v-for="(version, index) in item.versions"
-                :key="index"
-                @dblclick="openVersion(index)"
+      <q-list style="min-height:200px; height:34vh; overflow-y:scroll;">
+        <q-item
+          v-for="(item, index) in songs"
+          :key="index"
+          clickable
+          v-ripple
+          :dense="item.versions === undefined"
+          :active="item._id === currentSong"
+          active-class="bg-grey-8 text-white"
+          style="padding: 0px 16px;"
+          @click="$root.$emit('library-single-click', item._id)"
+          @dblclick.once="$root.$emit('library-double-click', item._id)"
+        >
+          <q-menu touch-position context-menu>
+            <!-- Context Menu -->
+            <q-list dense style="min-width: 100px">
+              <q-item
+                clickable
+                v-close-popup
+                @click="$root.$emit('library-double-click', item._id)"
               >
-                {{ version.title }}
-              </q-badge>
-            </q-item-section>
-          </q-item>
-          <q-separator v-if="index < songs.length - 1" />
-        </template>
-      </q-virtual-scroll>
+                <q-item-section avatar>
+                  <q-icon size="16px" name="fas fa-external-link-alt" />
+                </q-item-section>
+                <q-item-section>{{ $t("open") }}</q-item-section>
+              </q-item>
+              <q-item
+                clickable
+                v-close-popup
+                @click="$root.$emit('library-print', item._id)"
+              >
+                <q-item-section avatar>
+                  <q-icon size="16px" name="fas fa-file-pdf" />
+                </q-item-section>
+                <q-item-section>{{ $t("export_pdf") }}</q-item-section>
+              </q-item>
+
+              <q-item
+                clickable
+                v-close-popup
+                @click="$root.$emit('edit-song', item._id)"
+                v-if="
+                  licenseInfo.userProfile === 'superadmin' ||
+                    licenseInfo.userProfile === 'admin' ||
+                    licenseInfo.userProfile === 'worshipleader'
+                "
+              >
+                <q-item-section avatar>
+                  <q-icon size="16px" name="fas fa-edit" />
+                </q-item-section>
+                <q-item-section>{{ $t("edit") }}</q-item-section>
+              </q-item>
+              <q-item
+                clickable
+                v-close-popup
+                @click="openDeleteDialog(item)"
+                v-if="
+                  licenseInfo.userProfile === 'superadmin' ||
+                    licenseInfo.userProfile === 'admin' ||
+                    licenseInfo.userProfile === 'worshipleader'
+                "
+              >
+                <q-item-section avatar>
+                  <q-icon size="16px" name="fas fa-trash-alt" />
+                </q-item-section>
+                <q-item-section>{{ $t("delete") }}</q-item-section>
+              </q-item>
+              <q-separator />
+              <q-item
+                clickable
+                v-close-popup
+                @click="openPad(item._id)"
+                v-if="
+                  licenseInfo.userProfile === 'superadmin' ||
+                    licenseInfo.userProfile === 'admin' ||
+                    licenseInfo.userProfile === 'worshipleader'
+                "
+              >
+                <q-item-section avatar>
+                  <q-icon size="16px" name="fas fa-volume-off" />
+                </q-item-section>
+                <q-item-section>{{ $t("choose_pad") }}</q-item-section>
+              </q-item>
+              <q-separator />
+              <q-item clickable v-close-popup @click="addToPlaylist(item)">
+                <q-item-section avatar>
+                  <q-icon size="16px" name="fas fa-list" />
+                </q-item-section>
+                <q-item-section>{{ $t("add_to_playlist") }}</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+          <q-item-section>
+            <q-item-label style="font-weight:bold">{{
+              item.title
+            }}</q-item-label>
+            <q-item-label caption class="text-white">{{
+              item.author
+            }}</q-item-label>
+          </q-item-section>
+          <q-item-section
+            top
+            side
+            class="text-white"
+            v-if="item.versions !== undefined"
+          >
+            <q-badge
+              color="blue"
+              v-for="(version, index) in item.versions"
+              :key="index"
+              @dblclick="openVersion(index)"
+            >
+              {{ version.title }}
+            </q-badge>
+          </q-item-section>
+        </q-item>
+        <q-separator v-if="index < songs.length - 1" />
+      </q-list>
     </q-card-section>
     <q-bar dense
       ><q-btn
@@ -201,7 +200,7 @@ export default {
       versionDialog: false,
       selectedSong: null,
       selectedVersion: null,
-      licenseInfo:null,
+      licenseInfo: null,
       songs: [],
       searchText: ""
     };
@@ -230,6 +229,7 @@ export default {
     },
     reloadSongs() {
       this.$ws.allSongs("").then(songs => {
+        Object.freeze(songs);
         this.songs = songs;
       });
     },
@@ -275,7 +275,7 @@ export default {
     addToPlaylistVersion(version) {
       let song = this.selectedSong;
       song.selectedVersion = version;
-      song.sections = this.selectedSections;
+     
       console.log(song);
       this.$store.dispatch("defaultModule/addToPlaylist", song);
     },
@@ -286,8 +286,7 @@ export default {
   computed: {
     currentSong() {
       return this.$store.getters["defaultModule/getCurrentSong"];
-    },
- 
+    }
   },
   watch: {
     searchText() {
@@ -299,4 +298,11 @@ export default {
 };
 </script>
 
-<style></style>
+<style>
+.dynamic-height {
+   color: #000;
+   font-size: 12px;
+   margin-top: calc(100% - 10px);
+   text-align: left;
+}
+</style>

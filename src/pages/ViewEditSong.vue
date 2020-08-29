@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <q-card dark style="background:transparent;" v-if="songToEdit !== null">
+    <q-card :dark="chordsBackground=='dark'" :style="chordsBackground==='dark' ? 'background:transparent' : ''" v-if="songToEdit !== null">
       <q-bar class="bg-grey-10 text-white">
         <q-btn dense flat label="Close" icon="close" @click="$router.go(-1)">
           <q-tooltip content-class="bg-white text-primary">Close</q-tooltip>
@@ -91,6 +91,9 @@
         </q-scroll-area>
         <!-- Song Items -->
       </q-card-section>
+       <q-page-sticky position="top-right" :offset="[45,45]" v-if="transpose !== 0">
+            <q-btn disable fab :label="transpose" color="accent" />
+          </q-page-sticky>
     </q-card>
 
     <vue-draggable-resizable
@@ -294,6 +297,7 @@
                   @click="newVersionDialog = true"
                 />
               </q-card-actions>
+              
             </q-card>
           </q-tab-panel>
         </q-tab-panels>
@@ -354,6 +358,8 @@ export default {
         "defaultModule/setSongVersion",
        null
       );
+      this.transpose = 0;
+
   },
   mounted() {
     this.loadPreferences();
@@ -384,6 +390,7 @@ export default {
       newVersionDialog: false,
       newVersionTitle: null,
       selectedVersion: null,
+      chordsBackground:'dark',
       sections: [],
       songID: null,
       songRev: null,
@@ -397,11 +404,11 @@ export default {
       if (e.keyCode === 43) {
         this.transpose++;
 
-        this.$ws.createAlert("Transpose " + this.transpose);
+        //this.$ws.createAlert("Transpose " + this.transpose);
       }
       if (e.keyCode === 45) {
         this.transpose--;
-        this.$ws.createAlert("Transpose " + this.transpose);
+       // this.$ws.createAlert("Transpose " + this.transpose);
       }
     },
     loadLicenseInfo() {
@@ -516,10 +523,12 @@ export default {
     loadPreferences() {
       return new Promise(res => {
         this.$ws.getPreferences().then(pref => {
+          console.log(pref)
           this.preferences.computerName = pref.data.computerName;
           this.preferences.showChords = pref.data.showChords;
           this.preferences.startModule = pref.data.startModule;
           this.preferences.notation = pref.data.notation;
+          this.chordsBackground = pref.data.chordsBackground;
           res("ok");
         });
       });
@@ -1158,14 +1167,25 @@ export default {
         this.transpose = 0;
       }
     },
-    selectedVersion() {
-      if (this.selectedVersion === null) {
+    selectedSongVersion() {
+      if (this.selectedSongVersion === null) {
         console.log("Null");
         this.sections = this.songToEdit.sections;
       } else {
-        console.log(this.songToEdit.versions[this.selectedVersion].sections);
-        this.sections = this.songToEdit.versions[this.selectedVersion].sections;
+        console.log(this.songToEdit.versions[this.selectedSongVersion].sections);
+        this.sections = this.songToEdit.versions[this.selectedSongVersion].sections;
       }
+    },
+    currentPlaylistIndex(){
+     if(this.playlist.items[this.currentPlaylistIndex].versions !== undefined){
+       if(this.playlist.items[this.currentPlaylistIndex].selectedVersion !== null){
+         this.sections = this.playlist.items[this.currentPlaylistIndex].versions[this.playlist.items[this.currentPlaylistIndex].selectedVersion].sections
+       } else {
+         this.sections = this.playlist.items[this.currentPlaylistIndex].sections
+       }
+     } else {
+        this.sections = this.playlist.items[this.currentPlaylistIndex].sections
+     }
     }
   }
 };
@@ -1173,9 +1193,9 @@ export default {
 
 <style scoped>
 .songText {
-  font-size: 18px;
-  padding-top: 18px;
-  line-height: 39.6px;
+  font-size: 25px;
+  padding-top: 25px;
+  line-height: 50px;
   white-space: pre-line;
   text-transform: uppercase;
 }
@@ -1188,8 +1208,8 @@ export default {
 }
 .songChords {
   position: absolute;
-  font-size: 18px;
-  line-height: 39.6px;
+  font-size: 25px;
+  line-height: 50px;
   white-space: pre;
   color: red;
   font-weight: bold;

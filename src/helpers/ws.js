@@ -224,8 +224,10 @@ export const ws_helpers = {
       const simpleCrypto = new SimpleCrypto(email);
       try {
         const decryptedKey = simpleCrypto.decrypt(licenseKey);
-        res(JSON.parse(decryptedKey));
-      } catch {
+        console.log(decryptedKey)
+        res(decryptedKey);
+      } catch(e) {
+        console.log(e)
         console.log("ERRORE");
       }
     });

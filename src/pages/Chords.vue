@@ -176,14 +176,15 @@
         </q-card>
       </pane>
       <pane size="75">
+        <!--
         <q-tabs dense v-model="selectedViewTab" class="text-white">
           <q-tab
             name="preview"
             icon="far fa-file-image"
             :label="$t('preview')"
-          />
-          <!--  <q-tab name="alarms" icon="fas fa-stream" label="Multitracks" /> -->
-        </q-tabs>
+          /> 
+          <q-tab name="alarms" icon="fas fa-stream" label="Multitracks" /> 
+        </q-tabs> -->
         <q-tab-panels v-model="selectedViewTab">
           <q-tab-panel name="preview" style="padding:0px">
             <q-card style="overflow:scroll; height:95vh"  ref="printMe">
