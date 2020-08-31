@@ -264,12 +264,20 @@ var slideWindowOpen;
 function createWindow() {
   /**
    * Initial window options
+   * 
    */
+
+  let showWindow = false;
+
+  if(process.platform === 'darwin'){
+    showWindow = true;
+  }
+
 
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 600,
-    show: false,
+    show: showWindow,
     //frame: false,
     icon: require("path").join(__statics, "icons/64x64.png"),
     useContentSize: true,

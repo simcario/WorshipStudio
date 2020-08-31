@@ -17,3 +17,7 @@ export function getCurrentSong(state){
 export function getCurrentSongVersion(state){
     return state.songVersion
 }
+
+export function getSearchText(state){
+    return state.searchText
+}

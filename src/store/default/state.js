@@ -5,6 +5,7 @@ export default {
     name: null,
     items: []
   },
-  songVersion:null
+  songVersion:null,
+  searchText: sessionStorage.getItem('searchText') || null,
 
 }

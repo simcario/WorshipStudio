@@ -43,8 +43,8 @@ export default {
   name: "FirstConfig",
   mounted() {
    
-
       this.$ws.checkUpdate().then(data=>{
+        console.log('UPDATE', data)
         if(data.update === true){
           this.updateAlert = true
           this.newFeatures = data.features
@@ -52,7 +52,6 @@ export default {
           this.gotoApp()
         }
     })
-
     
   },
   sockets: {},

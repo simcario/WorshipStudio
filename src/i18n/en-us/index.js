@@ -3,6 +3,7 @@
 export default {
   add_to_playlist:'Addto playlist',
   cancel:'Cancel',
+  check_license:'Check License',
   choose_pad:'Choose Pad',
   clear_playlist:'Clear Playlist',
   cloud_playlists:'Cloud Playlists',
@@ -20,6 +21,7 @@ export default {
   new_version_available:'New Version Available',
   new_version:'A new version of Worship Studio is available for download.',
   open:'Open...',
+  paste:'Paste',
   print:'Print',
   register_software:'Register Software',
   save_loop_region:'Save loop region',

@@ -23,7 +23,7 @@
           active-class="bg-grey-8 text-white"
           style="padding: 0px 16px;"
           @click="$root.$emit('library-single-click', item._id)"
-          @dblclick.once="$root.$emit('library-double-click', item._id)"
+          @dblclick="$root.$emit('library-double-click', item._id)"
         >
           <q-menu touch-position context-menu>
             <!-- Context Menu -->
@@ -123,6 +123,7 @@
               v-for="(version, index) in item.versions"
               :key="index"
               @dblclick="openVersion(index)"
+               @click="$root.$emit('print-version', version)"
             >
               {{ version.title }}
             </q-badge>
@@ -193,6 +194,7 @@ export default {
       this.reloadSongs();
     });
     this.reloadSongs();
+    this.searchText = this.$store.getters['defaultModule/getSearchText']
   },
 
   data() {
@@ -290,7 +292,9 @@ export default {
   },
   watch: {
     searchText() {
+         this.$store.dispatch("defaultModule/setSearchText", this.searchText);
       this.$ws.allSongs(this.searchText).then(songs => {
+  
         this.songs = songs;
       });
     }

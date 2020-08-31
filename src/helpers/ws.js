@@ -2,8 +2,8 @@ import Vue from "vue";
 import axios from "axios";
 import SimpleCrypto from "simple-crypto-js";
 import { Notify } from "quasar";
-import {version} from '../../package.json'
-
+import { version } from "../../package.json";
+import dns from "dns";
 const bus = new Vue();
 
 export const ws_helpers = {
@@ -58,7 +58,7 @@ export const ws_helpers = {
           }
         })
         .then(docs => {
-          console.log(docs)
+          console.log(docs);
           if (docs.docs.length > 0) {
             res(docs.docs[0].data);
           } else {
@@ -224,43 +224,58 @@ export const ws_helpers = {
       const simpleCrypto = new SimpleCrypto(email);
       try {
         const decryptedKey = simpleCrypto.decrypt(licenseKey);
-        console.log(decryptedKey)
+        console.log(decryptedKey);
         res(decryptedKey);
-      } catch(e) {
-        console.log(e)
+      } catch (e) {
+        console.log(e);
         console.log("ERRORE");
       }
     });
   },
-  checkUpdate(){
-
-    return new Promise((res, rej)=>{
-
-
-      axios("http://www.simonpietro.it/worshipstudio/downloads/version.php")
-    .then(({ data }) => {
-      let local = version.split(".");
-      let remote = data.version.split(".");
-      if (
-        parseInt(remote[0]) > parseInt(local[0]) ||
-        parseInt(remote[1]) > parseInt(local[1]) ||
-        parseInt(remote[2]) > parseInt(local[2])
-      ) {
-        res({
-          update:true,
-          features:data.new_features
-        })
-      } else {
-        res( {
-          update:false
-        })
-      }
+  checkUpdate() {
+    return new Promise((res, rej) => {
+      this.checkInternetConnection().then(status=>{
+        if(status==='ok'){
+          axios(
+            "http://www.simonpietro.it/worshipstudio/downloads/version.php"
+          ).then(({ data }) => {
+            let local = version.split(".");
+            let remote = data.version.split(".");
+            if (
+              parseInt(remote[0]) > parseInt(local[0]) ||
+              parseInt(remote[1]) > parseInt(local[1]) ||
+              parseInt(remote[2]) > parseInt(local[2])
+            ) {
+              res({
+                update: true,
+                features: data.new_features
+              });
+            } else {
+              res({
+                update: false
+              });
+            }
+          });
+        } else {
+          res({
+            update: 'no-connection'
+          });
+        }
+      })
     });
-
-    })
-
-    
   },
+  checkInternetConnection() {
+    return new Promise(res => {
+      dns.resolve("www.google.com", function(err, addr) {
+        if (err === null) {
+          res("ok");
+        } else {
+          res("no-connection");
+        }
+      });
+    });
+  },
+
   loadFile() {
     return new Promise((res, rej) => {
       axios
@@ -364,29 +379,32 @@ export const ws_helpers = {
     });
   },
   loadCloudPlaylist(playlist) {
-    Notify.create({
-      message: "Load selected Cloud Playlist?",
-      color: "primary",
-      icon: "fas fa-question",
-      textColor: "white",
-      position: "center",
-      actions: [
-        {
-          label: "Yes",
-          color: "yellow",
-          handler: () => {
-            Vue.prototype.$store.dispatch(
-              "defaultModule/setPlaylist",
-              playlist
-            );
+    return new Promise(res => {
+      Notify.create({
+        message: "Load selected Cloud Playlist?",
+        color: "primary",
+        icon: "fas fa-question",
+        textColor: "white",
+        position: "center",
+        actions: [
+          {
+            label: "Yes",
+            color: "yellow",
+            handler: () => {
+              Vue.prototype.$store.dispatch(
+                "defaultModule/setPlaylist",
+                playlist
+              );
+              res("ok");
+            }
+          },
+          {
+            label: "Dismiss",
+            color: "white",
+            handler: () => console.log("dismiss")
           }
-        },
-        {
-          label: "Dismiss",
-          color: "white",
-          handler: () => console.log("dismiss")
-        }
-      ]
+        ]
+      });
     });
   },
   appQuit() {

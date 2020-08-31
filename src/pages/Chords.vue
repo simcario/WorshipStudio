@@ -113,7 +113,7 @@
                   <q-item
                     clickable
                     v-ripple
-                    @dblclick="$ws.loadCloudPlaylist(pl)"
+                    @dblclick="$ws.loadCloudPlaylist(pl).then(()=>{activeTab = 'currentPlaylist'})"
                   >
                     <q-menu touch-position context-menu>
                       <!-- Context Menu -->
@@ -329,21 +329,29 @@ export default {
         });
       }
     });
+     this.$root.$on("print-version", version => {
+       console.log('print-verion')
+       this.selectedSong.sections = version.sections
+    });
     this.$root.$once("open-pad", name => {
       this.padLoading = true;
       this.waveName = name;
     });
     this.$root.$on("library-single-click", id => {
+     
       this.$store.dispatch("defaultModule/setCurrentSong", id);
+      
       this.openSong(id);
     });
     this.$root.$on("library-print", id => {
       this.$store.dispatch("defaultModule/setCurrentSong", id);
+      
       this.openSong(id).then(() => {
         this.print();
       });
     });
     this.$root.$once("library-double-click", id => {
+   
       this.openFullScreen(id, false);
     });
     this.$root.$once("edit-song", id => {
@@ -1383,7 +1391,7 @@ export default {
         .then(data => {
           const pad = data.docs[0] !== undefined ? data.docs[0] : null;
           this.currentSongRef = data.docs[0];
-          if (data.docs[0].fileName !== undefined) {
+          if (data.docs[0] !== undefined && data.docs[0].fileName !== undefined) {
             let filePath = data.docs[0].fileName.split("/");
 
             this.waveName = filePath[filePath.length - 1];

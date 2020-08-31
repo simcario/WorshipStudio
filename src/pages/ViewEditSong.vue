@@ -1167,13 +1167,13 @@ export default {
         this.transpose = 0;
       }
     },
-    selectedSongVersion() {
-      if (this.selectedSongVersion === null) {
+    selectedVersion() {
+      if (this.selectedVersion === null) {
         console.log("Null");
         this.sections = this.songToEdit.sections;
       } else {
-        console.log(this.songToEdit.versions[this.selectedSongVersion].sections);
-        this.sections = this.songToEdit.versions[this.selectedSongVersion].sections;
+        console.log(this.songToEdit.versions[this.selectedVersion].sections);
+        this.sections = this.songToEdit.versions[this.selectedVersion].sections;
       }
     },
     currentPlaylistIndex(){
