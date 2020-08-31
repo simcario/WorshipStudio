@@ -212,6 +212,10 @@ module.exports = function (ctx) {
           "publish": ["github"],
           "publisherName": "${author.name}"
         },
+        "mac": {
+          "target": "dmg",
+          "icon": "src/statics/icons/icon_512.png"
+        },
         "nsis": {
           "artifactName": "${productName}.${version}.${ext}"
         },
